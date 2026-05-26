@@ -1,0 +1,73 @@
+---
+title: "Visual Components Interface and UI Overview"
+description: "Tour the main areas of the Visual Components 5.0 interface: the 3D world viewport, ribbon toolbar, eCatalog panel, properties panel, and output panel."
+---
+
+When you open Visual Components, you see a workspace organized around a central 3D viewport surrounded by panels and a ribbon toolbar at the top. Understanding where each area is and what it does helps you work efficiently from your first session. This page describes each interface area and explains how to customize the panel layout to suit your workflow.
+
+## Interface areas
+
+### Ribbon toolbar
+
+The ribbon toolbar runs across the top of the application window. It organizes commands into tabs grouped by task:
+
+- **Home** — basic layout commands: new, open, save, undo/redo, and component management.
+- **Modeling** — tools for creating and editing component geometry and behaviors.
+- **Program** — robot programming, path editing, and OLP tools (Professional and Premium).
+- **Simulation** — play, pause, stop, speed control, and recording.
+- **Connectivity** — OPC UA, signal mapping, and external connectivity (Premium).
+- **Layout** — visualization settings, drawing tools, and coordinate system controls.
+
+You can right-click any ribbon tab to customize which commands appear on the **Quick Access Toolbar** at the top-left, giving you single-click access to your most-used commands.
+
+### 3D world (viewport)
+
+The large central area is the 3D world, also called the viewport. This is where your simulation layout lives. You navigate this space using mouse controls or keyboard shortcuts, select and manipulate components, and observe running simulations.
+
+The viewport has a toolbar of its own along its top edge. It provides quick access to view options including render mode, orthographic/perspective projection toggle, floor display settings, and the frame visibility toggle.
+
+See [Navigate the 3D World](/getting-started/navigation) for a full guide to camera controls and view presets.
+
+### eCatalog panel
+
+The eCatalog panel (typically docked on the left side) is your component library. It contains thousands of pre-built robots, conveyors, machines, feeders, and other manufacturing equipment organized into categories. You search, browse, and drag components from the eCatalog directly into the 3D world.
+
+See [Browse and Use the eCatalog Component Library](/getting-started/ecatalog) for details on searching, filtering, and adding custom sources.
+
+### Properties panel
+
+The properties panel (typically docked on the right side) shows the properties of whatever you have selected in the 3D world. When you select a component, its configurable properties appear here — including position and orientation, component-specific settings like conveyor speed or robot payload, and behavioral parameters.
+
+The properties panel context changes depending on what is selected:
+
+- **Component selected** — shows position (X, Y, Z), rotation, and component properties.
+- **Feature or node selected** — shows geometry and joint properties for that specific node.
+- **Nothing selected** — shows world-level properties and layout statistics.
+
+### Output panel
+
+The output panel (docked at the bottom by default) displays messages generated during a simulation run. These include information messages, warnings, and errors produced by component behaviors and Python scripts. You can filter messages by type and search the log to diagnose problems.
+
+<Tip>
+  Use the output panel to monitor component behavior during simulation. Python-scripted components can write custom messages here using `vcScript.log()`.
+</Tip>
+
+## Customizing the panel layout
+
+You can rearrange, dock, float, and close any panel to create a workspace that fits your screen and workflow.
+
+**To move a panel:**
+Click and drag the panel's title bar. As you drag, blue docking guides appear — drop the panel onto a guide to dock it in that position, or release it in open space to float it as a separate window.
+
+**To close a panel:**
+Click the **×** on the panel's title bar. To reopen a closed panel, go to the **Home** ribbon tab and click the panel name in the **Panels** section.
+
+**To resize a panel:**
+Drag the border between a docked panel and the adjacent area.
+
+**To restore the default layout:**
+Go to **Home → Panels → Reset Layout** to return all panels to their default positions.
+
+<Note>
+  Visual Components saves your panel layout between sessions. The layout you set up persists when you close and reopen the application.
+</Note>

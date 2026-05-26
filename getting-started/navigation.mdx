@@ -1,0 +1,63 @@
+---
+title: "Navigate the 3D World in Visual Components"
+description: "Learn the camera controls for orbiting, panning, and zooming in the Visual Components 3D viewport, plus view presets, the view selector, and focus shortcuts."
+---
+
+The 3D world in Visual Components uses a free-camera navigation model. You control the viewpoint using your mouse, keyboard shortcuts, and the view selector widget. Getting comfortable with navigation is the first step toward working efficiently — you will use these controls constantly as you place components, inspect your layout, and monitor simulations.
+
+## Camera controls
+
+The following table lists the primary camera controls. All controls work directly in the 3D world without switching to a special navigation mode.
+
+| Action | Control |
+|---|---|
+| **Orbit / rotate** | Hold **middle mouse button** and drag, or hold **Alt + left mouse button** and drag |
+| **Pan** | Hold **middle mouse button + Shift** and drag, or hold **Alt + middle mouse button** and drag |
+| **Zoom** | Scroll the **mouse wheel** forward (zoom in) or backward (zoom out) |
+| **Focus selected** | Press **F** to center the camera on the selected component |
+| **Fit all** | Press **A** to fit the entire layout into view |
+| **Zoom to cursor** | Scroll the mouse wheel while hovering over a component to zoom toward that point |
+
+<Tip>
+  If you have a 3D mouse (such as a 3Dconnexion device), Visual Components supports it natively. The 3D mouse controls the camera while your standard mouse handles selection and interaction.
+</Tip>
+
+## View presets and the view selector
+
+The view selector widget appears in the upper-right corner of the 3D world. It shows a small 3D cube with labeled faces (Top, Front, Right, and so on). Click any face or corner of the cube to instantly switch to that standard view:
+
+- **Top** — looks straight down from above (plan view).
+- **Front** — looks from the front of the world.
+- **Right** — looks from the right side.
+- **Isometric** — a preset angled view showing the layout in three-quarter perspective.
+
+You can also access view presets from the 3D world toolbar using the **Views** dropdown.
+
+## Orthographic and perspective projection
+
+By default, the viewport uses perspective projection, where objects farther from the camera appear smaller. You can switch to orthographic projection, where all objects appear at a true scale regardless of distance. Orthographic mode is useful for precise placement and measurement tasks.
+
+Toggle between projections by clicking the **Perspective / Orthographic** button in the 3D world toolbar, or by pressing **Numpad 5** if you have a numpad keyboard.
+
+## Zoom factor
+
+The zoom factor controls how much the camera moves per scroll-wheel tick. If you find zooming too fast or too slow for your layout scale, you can adjust it:
+
+1. Go to **Home → Options → Navigation**.
+2. Adjust the **Zoom Factor** slider to increase or decrease scroll sensitivity.
+
+## Focus mode
+
+Focus mode temporarily isolates a selected component or group, hiding everything else so you can work without visual clutter. To enter Focus mode, select a component and press **F2**, or right-click the component and choose **Focus**. Press **Escape** to exit Focus mode and restore the full layout.
+
+## Navigating during simulation
+
+You can navigate the 3D world freely while a simulation is running. The camera controls behave identically whether the simulation is playing, paused, or stopped. You can orbit around moving robots, zoom in on a specific conveyor, or switch to a top-down view to track product flow — all without affecting the simulation state.
+
+## Showing the 3D world origin
+
+To display the world origin axes (X, Y, Z) as a reference, go to the 3D world toolbar and enable **Show Origin**. The origin markers help you understand the absolute coordinate system when placing components.
+
+<Note>
+  In Visual Components, the Z axis points upward. The floor of the 3D world lies on the XY plane at Z = 0.
+</Note>

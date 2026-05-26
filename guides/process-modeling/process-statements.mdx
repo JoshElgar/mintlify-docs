@@ -1,0 +1,201 @@
+---
+title: 'Process Statements Reference for Visual Components'
+description: "Reference for process statements in Visual Components Process Modeling, covering transport, timing, signals, conditionals, and robot routines."
+---
+
+Process statements define what happens inside a process during the simulation. Each PM station has a process executor that runs a list of statements in order from top to bottom. Statements can move products in and out, apply delays, wait for signals, make decisions, and trigger robot routines. Understanding the available statements and how they interact is the key to building realistic process behavior.
+
+You add statements in the **Process** tab of the properties panel when a PM component is selected. The process executor shows its statement list under the **Statements** section, where you can add, reorder, and configure each entry.
+
+## Transport statements
+
+Transport statements control the movement of products into and out of a process. Every process that receives or sends products needs at least one transport statement.
+
+### Transport In
+
+**Transport In** waits for a product to arrive at this process from an upstream component and claims it. The process does not proceed past this statement until a product arrives.
+
+| Parameter | Description |
+| --- | --- |
+| **Source** | The upstream component to accept products from. Use `Any` to accept from any connected source, or select a specific component. |
+| **Filter** | Optional transport filter to restrict which products this statement accepts. |
+| **Capacity** | Maximum number of products this statement holds simultaneously. Defaults to 1. |
+
+### Transport Out
+
+**Transport Out** releases a product to a downstream component. The process blocks on this statement until a downstream process has capacity to accept the product.
+
+| Parameter | Description |
+| --- | --- |
+| **Destination** | The downstream component to send the product to. Use `Next` to follow the flow definition, or select a specific component. |
+| **Filter** | Optional filter to restrict which product this statement releases. |
+
+### Start Transport In / Start Transport Out
+
+These are non-blocking variants of Transport In and Transport Out. **Start Transport In** initiates an incoming transport request without waiting for it to complete, and **Start Transport Out** dispatches a product toward its destination without halting the process. Use a **Wait Transport** statement later in the sequence to synchronize when you need to confirm that the transport finished.
+
+### Wait Transport
+
+**Wait Transport** pauses the process until a previously started transport (initiated by Start Transport In or Start Transport Out) completes. Place this statement after the work that can run in parallel with the transport.
+
+### Transport Pattern In
+
+**Transport Pattern In** accepts multiple products in a defined spatial pattern — for example, filling a pallet grid. Configure the pattern dimensions (rows, columns, layers) and the slot positions. The statement waits until all pattern slots are filled before the process continues.
+
+<Tip>
+Use Transport Pattern In for palletizing and depalletizing scenarios where products must arrive in a specific arrangement before the next operation begins.
+</Tip>
+
+## Timing statements
+
+### Delay
+
+**Delay** pauses process execution for a fixed or variable time, simulating machine cycle time or manual work duration.
+
+| Parameter | Description |
+| --- | --- |
+| **Duration** | Time in seconds. Enter a fixed value or a distribution expression (e.g., `Normal(10, 1)` for a mean of 10 s with standard deviation of 1 s). |
+
+## Signal statements
+
+Signal statements synchronize processes with each other or with external components such as robots and PLCs.
+
+### Send Signal
+
+**Send Signal** emits a named boolean or integer signal to other components. Use this to notify a downstream process or a robot that a condition has been met.
+
+| Parameter | Description |
+| --- | --- |
+| **Signal name** | The name of the signal to send. Must match the signal name used in the corresponding Wait Signal statement. |
+| **Value** | The value to assign (true/false for boolean, integer for numeric signals). |
+
+### Wait Signal
+
+**Wait Signal** pauses the process until the specified signal reaches a target value.
+
+| Parameter | Description |
+| --- | --- |
+| **Signal name** | The signal to watch. |
+| **Target value** | The value the signal must reach before the process continues. |
+
+<Note>
+Signals used between Process Modeling statements and robot programs must exist in both the process executor and the robot controller. Create the signal in the **Signals** panel before referencing it in statements.
+</Note>
+
+## Product creation and removal
+
+### Create
+
+**Create** instantiates a new product of a specified type at this process without requiring a feeder. Use this when a process generates a product from raw material that the simulation does not track as a discrete part.
+
+| Parameter | Description |
+| --- | --- |
+| **Product type** | The type of product to create. |
+
+### Remove
+
+**Remove** destroys a product currently held by this process. Use this at a sink or when a process consumes a component (such as packaging material) without sending it further.
+
+### Change Type
+
+**Change Type** converts a product from one type to another while keeping the same physical instance. Use this when a machining operation transforms a blank into a finished part — the geometry updates to reflect the new product type.
+
+## Assembly statements
+
+### Attach
+
+**Attach** adds a sub-component product to an assembly product. The sub-component is placed into the next available slot in the assembly definition. The process blocks until a sub-component is available to attach.
+
+### Detach
+
+**Detach** removes a sub-component from an assembly product and releases it as a standalone product again. Configure which slot index to detach from.
+
+## Conditional statements
+
+### If / ElseIf / Else
+
+Conditional blocks let the process take different paths based on product properties, signal values, or runtime expressions.
+
+```
+If  <condition>
+    <statements>
+ElseIf  <condition>
+    <statements>
+Else
+    <statements>
+End If
+```
+
+**Condition** can reference:
+- Product properties: `product.Type == "CylinderPart"`
+- Signal values: `signal.MachineDone == true`
+- Simulation variables or Python expressions
+
+<Warning>
+Nested conditionals are supported but increase complexity quickly. Consider splitting complex logic across multiple processes connected by transport links rather than deeply nesting If blocks.
+</Warning>
+
+## Property statements
+
+### Get Property
+
+**Get Property** reads the value of a product property and stores it in a local variable that subsequent statements can use.
+
+| Parameter | Description |
+| --- | --- |
+| **Property name** | The product property to read. |
+| **Variable** | The name of the local variable to store the value in. |
+
+### Wait Property Condition
+
+**Wait Property Condition** pauses the process until a specific product property satisfies a condition. Use this when a process must wait for an upstream operation to update a product property before it can proceed.
+
+| Parameter | Description |
+| --- | --- |
+| **Property name** | The property to monitor. |
+| **Condition** | The comparison to evaluate (equals, greater than, less than). |
+| **Target value** | The value the property must reach. |
+
+## Reserve Product
+
+**Reserve Product** claims a specific product that is currently waiting in an upstream buffer or transport link, preventing any other process from taking it. Use this when two or more processes compete for products from a shared source and you need deterministic assignment.
+
+<Steps>
+  <Step title="Add a Reserve Product statement">
+    In the process executor statement list, add a **Reserve Product** statement before the Transport In statement.
+  </Step>
+  <Step title="Specify the source">
+    Set the **Source** parameter to the component where the product is waiting (typically the feeder or a buffer).
+  </Step>
+  <Step title="Apply a filter (optional)">
+    Add a transport filter to reserve only products of a specific type or with a matching property value.
+  </Step>
+  <Step title="Follow with Transport In">
+    The reserved product is held for this process. Add a **Transport In** statement immediately after to claim and bring the product into the process.
+  </Step>
+</Steps>
+
+<Tip>
+Reserve Product is especially useful when a layout has multiple machines that pull from the same feeder and you want each machine to handle a specific product variant rather than competing for the first available product.
+</Tip>
+
+## Robot integration
+
+### Run Robot Routine
+
+**Run Robot Routine** triggers a named robot routine from within a process statement sequence. The process pauses until the robot finishes the routine. Use this to synchronize process timing with robot motion — for example, to delay a Transport Out until the robot has completed a pick-and-place cycle.
+
+| Parameter | Description |
+| --- | --- |
+| **Routine name** | The exact name of the robot program routine to execute. |
+| **Robot** | The robot component in the scene to trigger. |
+
+<Note>
+The robot must already be configured with the named routine before the simulation runs. If the routine name does not match, the simulation raises an error at the point where Run Robot Routine executes.
+</Note>
+
+## Statement execution order
+
+The process executor runs statements sequentially from top to bottom and loops back to the beginning when it reaches the end of the list. This means a process that receives a product, processes it, and sends it out will repeat that cycle continuously during the simulation.
+
+You can reorder statements by dragging them in the statement list. Place any initialization statements (such as signal resets) at the top, and terminal statements (such as Remove) at the bottom.

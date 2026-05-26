@@ -1,0 +1,76 @@
+---
+title: "Import Point Cloud Data Using the Python API"
+description: "Load and visualize E57, PTS, XYZ, and PTX point cloud files in Visual Components using the UI importer or the Python API for automated workflows."
+---
+
+Visual Components supports importing point cloud data to provide real-world spatial context for your simulation layouts — for example, a laser scan of an existing factory floor. You can import point clouds manually through the **File** menu or automate the import using the Python API for batch processing or custom workflows.
+
+## Manual import
+
+<Steps>
+  <Step title="Open the import dialog">
+    Go to **File** → **Import** and select your point cloud file. Supported formats include **E57**, **PTS**, **XYZ**, and **PTX**.
+  </Step>
+  <Step title="Configure import settings">
+    Set the coordinate system and scale if needed. Large point clouds can be decimated (subsampled) during import to improve performance — set the **Point Density** value to reduce the number of points loaded.
+  </Step>
+  <Step title="Position in the 3D world">
+    After import, the point cloud appears as a component in the 3D world. Use the Move and Rotate tools to align it with your layout if the origin does not match.
+  </Step>
+</Steps>
+
+## Import using the Python API
+
+Use the Python API to import point clouds programmatically. This is useful when you need to import multiple scans or integrate point cloud loading into a larger automation script.
+
+```python
+from vcScript import *
+
+def OnStart():
+    app = getApplication()
+
+    # Import a point cloud file
+    file_path = r'C:\Scans\factory_floor.e57'
+    comp = app.importLayout(file_path)
+
+    if comp:
+        print(f"Point cloud imported: {comp.Name}")
+        # Position the point cloud component
+        comp.PositionMatrix = comp.PositionMatrix
+    else:
+        print("Import failed — check the file path and format")
+```
+
+<Note>
+  The `importLayout()` method is a general-purpose importer that handles multiple file types including point cloud formats. The returned component can be repositioned using its `PositionMatrix` property.
+</Note>
+
+## Working with imported point cloud components
+
+Once imported, a point cloud is a standard Visual Components component. You can:
+
+- **Move and rotate** it using the transform tools or by setting `PositionMatrix` via Python
+- **Show or hide** it using the component's visibility property
+- **Adjust rendering** (point size, color) through the component's properties panel
+
+```python
+from vcScript import *
+
+def OnStart():
+    app = getApplication()
+    # Find an already-imported point cloud by name
+    pc = app.findComponent('factory_floor')
+    if pc:
+        # Toggle visibility
+        pc.Visible = True
+```
+
+## Performance tips
+
+<Tip>
+  Point clouds with millions of points can slow down the 3D viewport. Use the **Point Density** setting at import time to reduce point count. For very large scans, consider splitting the scan into sections and importing only the relevant area.
+</Tip>
+
+- Use E57 format where possible — it is the most widely supported and efficient format for Visual Components
+- Decimation at import time is more efficient than filtering after import
+- Hide the point cloud component when not needed to improve rendering performance

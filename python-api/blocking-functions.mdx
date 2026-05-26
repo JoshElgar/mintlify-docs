@@ -1,0 +1,97 @@
+---
+title: "Blocking Functions in the Visual Components Python API"
+description: "Understand blocking vs non-blocking Python calls in Visual Components, and learn when to use delay(), waitSignal(), and waitUntil() correctly."
+---
+
+Blocking functions are special Python calls that pause your script's execution and yield control back to the simulation engine until a condition is satisfied. Understanding the difference between blocking and non-blocking calls is essential for writing correct component scripts — using them incorrectly leads to scripts that freeze the simulation or never respond to events.
+
+## How the simulation executes scripts
+
+Visual Components runs component scripts as cooperative coroutines. When your `OnRun()` function calls a blocking function, it suspends at that point and allows the simulation to continue advancing time. When the condition is met (time elapsed, signal received, etc.), the script resumes from where it left off.
+
+If you write a tight loop with no blocking call, your script will monopolize the simulation thread and freeze the application.
+
+```python
+# BAD — freezes the simulation
+def OnRun():
+    while True:
+        pass  # Never yields control
+
+# GOOD — yields every simulation second
+def OnRun():
+    while True:
+        delay(1.0)
+        print("Tick")
+```
+
+## `delay(seconds)`
+
+Pauses the script for the specified number of **simulation seconds** (not real-world time). This is the most common blocking function.
+
+```python
+from vcScript import *
+
+def OnRun():
+    while True:
+        delay(2.5)           # Wait 2.5 simulation seconds
+        doSomething()
+```
+
+<Note>
+  The `delay()` argument is simulation time, not wall-clock time. At 2× simulation speed, a `delay(10.0)` completes in 5 real seconds.
+</Note>
+
+## `waitSignal(signal, value)`
+
+Blocks until the specified signal reaches the given value. Useful for synchronizing with external events such as a PLC output or another component's state.
+
+```python
+from vcScript import *
+
+def OnRun():
+    comp = getComponent()
+    trigger = comp.findBehaviour('StartSignal')
+
+    while True:
+        waitSignal(trigger, True)    # Wait for signal to go HIGH
+        print("Signal received — starting process")
+        delay(3.0)                   # Simulate processing time
+        trigger.signal(False)        # Reset signal
+```
+
+## `waitUntil(condition_fn)`
+
+Blocks until the provided callable returns `True`. Useful for custom conditions not tied to a single signal.
+
+```python
+from vcScript import *
+
+def OnRun():
+    comp = getComponent()
+    buffer = comp.findBehaviour('Buffer')
+
+    waitUntil(lambda: buffer.Count > 0)
+    print("Buffer has items — processing")
+```
+
+## Python API 2.7 blocking functions
+
+In the older Python API 2.7, blocking functions work the same way but the import is slightly different in some contexts. The key functions are identical: `delay()`, `waitSignal()`, `waitUntil()`.
+
+<Tip>
+  In Python API 2.7, `delay()` inside a nested function called from `OnRun()` still blocks correctly as long as the call chain originates from `OnRun()`. Calling blocking functions from event handlers (outside `OnRun()`) will raise an error.
+</Tip>
+
+## Common mistakes
+
+<AccordionGroup>
+  <Accordion title="Calling delay() from an event handler">
+    Blocking functions must only be called from within `OnRun()` or functions called from `OnRun()`. Calling `delay()` inside a signal event handler will raise a runtime error.
+  </Accordion>
+  <Accordion title="Using time.sleep() instead of delay()">
+    `time.sleep()` blocks the real thread, not just the script coroutine. This freezes the entire simulation. Always use `delay()` for simulation-time pauses.
+  </Accordion>
+  <Accordion title="Waiting for a signal that never fires">
+    If `waitSignal()` or `waitUntil()` never resolves, the script hangs indefinitely. Add a timeout pattern using a separate thread or check the simulation's stop condition to handle edge cases.
+  </Accordion>
+</AccordionGroup>

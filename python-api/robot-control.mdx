@@ -1,0 +1,295 @@
+---
+title: "Control Robots Programmatically with Python"
+description: "Use the Visual Components Python API to call robot subroutines, move joints, execute Cartesian moves, control servo grippers, and pick and place parts."
+---
+
+The Python API gives you direct control over robot motion during a simulation. Instead of relying solely on the robot's built-in program, you can write a component script that calls subroutines on demand, drives joints to specific values, picks and places parts at computed positions, and coordinates multiple robots—all in response to simulation state and signals.
+
+## Getting the robot controller
+
+Every robot in Visual Components has a `RobotController` behavior. Retrieve it through the component reference, then call its motion methods.
+
+```python
+from vcScript import *
+
+def OnRun():
+    app = getApplication()
+
+    # Find the robot component by name
+    robot = app.findComponent('IRB 4600')
+    if not robot:
+        print('Robot not found')
+        return
+
+    # Get the robot controller behavior
+    ctrl = robot.findBehaviour('RobotController')
+    if not ctrl:
+        print('RobotController not found')
+        return
+
+    print(f'Robot ready: {robot.Name}')
+```
+
+<Note>
+The behavior name is always `RobotController` for VC robots from the eCatalog. If you are using a custom component, the behavior may have a different name—check the Behaviors tab in the component properties.
+</Note>
+
+## Calling robot subroutines
+
+A robot program consists of named routines (subroutines). You can trigger any routine from Python without running the entire program sequentially.
+
+```python
+from vcScript import *
+
+def OnRun():
+    app = getApplication()
+    robot = app.findComponent('IRB 4600')
+    ctrl = robot.findBehaviour('RobotController')
+
+    while True:
+        # Execute the 'PickFromConveyor' routine and wait for completion
+        ctrl.moveToRoutine('PickFromConveyor')
+
+        # Execute the 'PlaceOnPallet' routine
+        ctrl.moveToRoutine('PlaceOnPallet')
+
+        # Return to home position
+        ctrl.moveToRoutine('Home')
+
+        delay(0.1)  # Brief pause before next cycle
+```
+
+`moveToRoutine()` is a blocking call—the script waits until the robot finishes the routine before continuing to the next line. This makes it straightforward to sequence operations.
+
+## Moving robot joints
+
+You can set individual joint angles directly, bypassing the robot program entirely. This is useful for jogging the robot to a known configuration or for testing joint limits.
+
+```python
+from vcScript import *
+
+def OnRun():
+    app = getApplication()
+    robot = app.findComponent('IRB 4600')
+    ctrl = robot.findBehaviour('RobotController')
+
+    # Get the list of joints
+    joints = ctrl.Joints
+    print(f'Robot has {len(joints)} joints')
+
+    # Move joint 0 (base rotation) to 45 degrees
+    joints[0].TargetValue = 45.0
+    ctrl.moveJoints()  # Blocking: waits for motion to complete
+
+    # Move joint 1 (shoulder) to -30 degrees
+    joints[1].TargetValue = -30.0
+    ctrl.moveJoints()
+
+    print('Robot moved to target configuration')
+    delay(2.0)
+```
+
+<Warning>
+Setting joint values directly bypasses collision detection within the robot controller. Ensure the target configuration is reachable and collision-free before using this approach in production simulations.
+</Warning>
+
+## Executing Cartesian moves
+
+To move the robot's tool center point (TCP) to a specific position and orientation in the world coordinate frame:
+
+```python
+from vcScript import *
+
+def OnRun():
+    app = getApplication()
+    robot = app.findComponent('IRB 4600')
+    ctrl = robot.findBehaviour('RobotController')
+
+    # Define target position as a matrix (position + orientation)
+    # vcMatrix stores a 4x4 transformation matrix
+    target = vcMatrix()
+    target.translateAbs(500, 200, 300)  # X, Y, Z in millimeters
+    target.rotateAbsX(0)                # rotation around X axis (degrees)
+    target.rotateAbsY(180)              # rotation around Y axis
+    target.rotateAbsZ(0)                # rotation around Z axis
+
+    # Move to the target position using linear motion (MoveL equivalent)
+    ctrl.moveTo(target, 'Linear')
+    print('Reached target position')
+```
+
+## Picking and placing parts
+
+The most common robot scripting pattern is picking a part from a source and placing it at a target. Visual Components provides helper methods on the robot controller for this.
+
+### Picking a stationary part
+
+```python
+from vcScript import *
+
+def OnRun():
+    app = getApplication()
+    robot = app.findComponent('IRB 4600')
+    ctrl = robot.findBehaviour('RobotController')
+
+    part = app.findComponent('Part_001')
+    if not part:
+        return
+
+    # Move above the part, then pick it
+    ctrl.moveToRoutine('ApproachPick')
+    ctrl.graspComponent(part)  # Attaches the part to the robot TCP
+    ctrl.moveToRoutine('Lift')
+
+    # Move to place position and release
+    ctrl.moveToRoutine('PlacePosition')
+    ctrl.releaseComponent(part)
+    ctrl.moveToRoutine('Home')
+```
+
+### Picking parts from a pallet
+
+When picking from an array of positions (such as a pallet), compute the position programmatically:
+
+```python
+from vcScript import *
+
+def OnRun():
+    app = getApplication()
+    robot = app.findComponent('IRB 4600')
+    ctrl = robot.findBehaviour('RobotController')
+
+    pallet = app.findComponent('Pallet')
+
+    # Pallet parameters
+    rows = 4
+    cols = 3
+    pitch_x = 150.0  # mm between parts in X
+    pitch_y = 150.0  # mm between parts in Y
+
+    for row in range(rows):
+        for col in range(cols):
+            # Calculate pick position relative to pallet
+            pick_pos = pallet.WorldPosition.copy()
+            pick_pos.translateRel(col * pitch_x, row * pitch_y, 50.0)
+
+            ctrl.moveTo(pick_pos, 'Linear')
+            ctrl.moveToRoutine('Pick')
+            ctrl.moveToRoutine('PlaceOnConveyor')
+
+    print(f'Picked {rows * cols} parts from pallet')
+```
+
+## Controlling servo grippers
+
+Grippers (and other end-effectors with moving parts) use a `ServoController` behavior. You open and close them by setting joint target values.
+
+```python
+from vcScript import *
+
+def open_gripper(robot):
+    gripper_comp = robot.findNode('Gripper').Component
+    servo = gripper_comp.findBehaviour('ServoController')
+    servo.Joints[0].TargetValue = 60.0  # degrees open
+    servo.Joints[0].move()
+    delay(servo.Joints[0].TravelTime)
+
+def close_gripper(robot):
+    gripper_comp = robot.findNode('Gripper').Component
+    servo = gripper_comp.findBehaviour('ServoController')
+    servo.Joints[0].TargetValue = 0.0   # closed
+    servo.Joints[0].move()
+    delay(servo.Joints[0].TravelTime)
+
+def OnRun():
+    app = getApplication()
+    robot = app.findComponent('IRB 4600')
+    ctrl = robot.findBehaviour('RobotController')
+
+    while True:
+        ctrl.moveToRoutine('PickApproach')
+        open_gripper(robot)
+        ctrl.moveToRoutine('PickContact')
+        close_gripper(robot)
+        ctrl.moveToRoutine('Lift')
+        ctrl.moveToRoutine('PlaceApproach')
+        open_gripper(robot)
+        ctrl.moveToRoutine('Home')
+```
+
+## Recording and replaying routines
+
+For complex motion paths, you can record the robot's movements interactively and save them as a named routine, then call that routine from Python:
+
+<Steps>
+  <Step title="Open the robot program">
+    Select the robot and open its **Program** tab in the property panel.
+  </Step>
+  <Step title="Create a new routine">
+    Click **Add Routine** and name it (for example, `PickSequence`).
+  </Step>
+  <Step title="Teach positions">
+    Jog the robot to the desired position using the **Jog** panel, then click **Teach Point** to record each position as a program statement.
+  </Step>
+  <Step title="Call the routine from Python">
+    Use `ctrl.moveToRoutine('PickSequence')` in your script to execute the recorded path.
+  </Step>
+</Steps>
+
+## Checking robot state
+
+Before sending commands, you can check whether the robot is busy or in an error state:
+
+```python
+from vcScript import *
+
+def OnRun():
+    app = getApplication()
+    robot = app.findComponent('IRB 4600')
+    ctrl = robot.findBehaviour('RobotController')
+
+    while True:
+        if ctrl.isBusy():
+            print('Robot is busy, waiting...')
+            delay(0.5)
+            continue
+
+        if ctrl.hasError():
+            print(f'Robot error: {ctrl.ErrorMessage}')
+            ctrl.clearError()
+            delay(1.0)
+            continue
+
+        # Robot is ready, send next command
+        ctrl.moveToRoutine('NextTask')
+```
+
+## Controlling a robot from a separate controller component
+
+A common architecture separates the robot from its controller logic. A dedicated "controller" component contains the Python script, while the robot itself has no script. This keeps the simulation cleaner and makes the controller reusable across different robot models.
+
+```python
+from vcScript import *
+
+# This script lives in a "CellController" component, not in the robot itself
+
+def OnRun():
+    app = getApplication()
+
+    # Find robots by name
+    robot_a = app.findComponent('Robot_A')
+    robot_b = app.findComponent('Robot_B')
+
+    ctrl_a = robot_a.findBehaviour('RobotController')
+    ctrl_b = robot_b.findBehaviour('RobotController')
+
+    # Coordinate two robots in sequence
+    while True:
+        ctrl_a.moveToRoutine('Pick')
+        ctrl_a.moveToRoutine('Handoff')  # Robot A moves part to handoff point
+
+        ctrl_b.moveToRoutine('ReceiveHandoff')
+        ctrl_b.moveToRoutine('Place')
+
+        delay(0.5)
+```

@@ -1,0 +1,317 @@
+---
+title: "Add Behaviors and Scripts to Custom Components"
+description: "Add Python scripts, state machines, signal connections, and event handlers to make Visual Components components interactive during simulation."
+---
+
+Once your component has geometry and joints, behaviors are what make it come alive in simulation. A behavior is a self-contained block of functionality attached to a node—scripts that run code, signals that carry values, sensors that detect events, and state machines that track operational mode. This page covers the behavior types most commonly used in component modeling.
+
+## What is a behavior?
+
+In Visual Components, a **behavior** is an object attached to a node that adds functional capability. You add behaviors by right-clicking a node in the Component Graph and choosing **Add Behavior**. Each behavior has its own properties visible in the Component Properties panel when the behavior is selected.
+
+Multiple behaviors can coexist on the same node. A typical production conveyor might have a path behavior, two sensor behaviors, a Python script, and several signal behaviors all attached to the root node.
+
+## Python component scripts
+
+A **Python Script** behavior runs Python code in the context of the component it belongs to. This is the primary way to implement custom simulation logic.
+
+### Creating a script
+
+<Steps>
+  <Step title="Add the behavior">
+    Select a node in the Component Graph, right-click, and choose **Add Behavior \> Python Script**. The script editor opens automatically.
+  </Step>
+  <Step title="Write the OnRun function">
+    The `OnRun` function is called once when the simulation starts and runs until the simulation stops. It is the main entry point for continuous logic:
+
+    ```python
+    from vcScript import *
+    
+    def OnRun():
+        comp = getComponent()
+        servo = comp.findBehavior("ServoController")
+        while True:
+            servo.move(500)   # move to 500 mm
+            delay(2.0)        # wait 2 seconds
+            servo.move(0)     # return to 0
+            delay(2.0)
+    ```
+  </Step>
+  <Step title="Reference component objects">
+    Use `getComponent()` to access the component, then `findBehavior(name)` to locate other behaviors by name, or `findNode(name)` to locate nodes.
+  </Step>
+</Steps>
+
+<Note>
+  Visual Components supports both Python 2.7 (legacy) and Python 3 (recommended for new components). Python 3 scripts use `from vcScript import *` and provide access to the full `vcScript` module with asynchronous-style blocking functions.
+</Note>
+
+### Accessing joints from scripts
+
+The `Joints` and `Degrees of Freedom` APIs let you query and set joint positions programmatically:
+
+```python
+from vcScript import *
+
+def OnRun():
+    comp = getComponent()
+    # Get the servo controller by name
+    servo = comp.findBehavior("J1_Servo")
+    
+    # Read current joint value
+    current = servo.CurrentValue
+    print("Current position:", current)
+    
+    # Command a move (blocking—waits until motion completes)
+    servo.move(90.0)
+```
+
+For robot components, access all joints through the robot controller:
+
+```python
+controller = comp.findBehavior("RobotController")
+joints = controller.Joints  # list of joint objects
+for j in joints:
+    print(j.Name, j.CurrentValue)
+```
+
+### Controlling servo motion
+
+The servo controller exposes blocking motion commands that automatically handle acceleration and deceleration:
+
+| Method | Description |
+| --- | --- |
+| `servo.move(value)` | Move to absolute position, wait for completion |
+| `servo.moveRel(delta)` | Move by a relative amount |
+| `servo.stop()` | Immediately stop motion |
+| `servo.home()` | Return to `HomeValue` |
+
+## Component states
+
+A **Statistics** behavior lets you define named states for a component and track time spent in each state. This is essential for OEE (Overall Equipment Effectiveness) analysis and for controlling component behavior based on operational mode.
+
+### Default states
+
+Every Statistics behavior starts with four built-in states:
+
+| State | Meaning |
+| --- | --- |
+| `Idle` | Component is powered and ready but not processing |
+| `Busy` | Component is actively processing |
+| `Failed` | Component has experienced a fault |
+| `Repair` | Component is being repaired |
+
+### Adding custom states
+
+```python
+from vcScript import *
+
+def OnRun():
+    comp = getComponent()
+    stats = comp.findBehavior("Statistics")
+    
+    # Transition to a state by name
+    stats.State = "Busy"
+    delay(5.0)
+    stats.State = "Idle"
+```
+
+### MTBF and MTTR simulation
+
+You can simulate mean-time-between-failures (MTBF) and mean-time-to-repair (MTTR) by sampling from a distribution and scheduling state transitions:
+
+```python
+import random
+
+def OnRun():
+    comp = getComponent()
+    stats = comp.findBehavior("Statistics")
+    
+    while True:
+        # Run normally for a random time (MTBF ~3600 s)
+        stats.State = "Busy"
+        delay(random.expovariate(1.0 / 3600.0))
+        
+        # Enter failed state for repair time (MTTR ~300 s)
+        stats.State = "Failed"
+        delay(random.expovariate(1.0 / 300.0))
+        stats.State = "Repair"
+        delay(random.expovariate(1.0 / 300.0))
+```
+
+### Exporting state statistics
+
+At the end of a simulation run, call `stats.exportCSV(path)` to write a CSV file with cumulative time in each state, which you can import into Excel or a reporting tool.
+
+## Signal connections and conditions
+
+Signals are named values that components expose so they can communicate with each other, with PLCs, or with robot controllers. Visual Components supports **Boolean**, **Integer**, and **Real** signal types.
+
+### Adding signals
+
+Right-click a node, choose **Add Behavior \> Signal**, and configure:
+
+- `Name` — identifier used in scripts and external connections
+- `Type` — Boolean, Integer, or Real
+- `InitialValue` — value at simulation start
+- `IsOutput` — true if this component produces the signal, false if it consumes it
+
+### Connecting signals between components
+
+In the layout, drag from one component's output signal to another component's input signal in the **Connection** panel, or write a Python script that reads from one component and writes to another:
+
+```python
+def OnRun():
+    comp = getComponent()
+    sensor_signal = comp.findBehavior("SensorOut")  # Boolean signal
+    
+    # Wait for sensor to go high (blocking)
+    sensor_signal.waitForValue(True)
+    print("Part detected!")
+```
+
+### Conditions and triggers
+
+A **Condition** is a boolean expression evaluated against signal and property values. You can use conditions to gate script execution:
+
+```python
+from vcScript import *
+
+# This function is called every simulation tick when the condition is met
+def OnCondition(condition):
+    comp = getComponent()
+    # React to the condition being satisfied
+    print("Condition triggered:", condition.Name)
+```
+
+A **Trigger** fires once when a condition transitions from False to True (rising edge). Use triggers when you need to react to the moment a condition becomes satisfied rather than while it remains true.
+
+### Signal events
+
+The `OnSignal` event handler in a Python script fires whenever a connected signal changes value:
+
+```python
+def OnSignal(signal):
+    if signal.Name == "StartButton" and signal.Value == True:
+        comp = getComponent()
+        servo = comp.findBehavior("ServoController")
+        servo.move(200)
+```
+
+<Tip>
+  Prefer `waitForValue` in `OnRun` for sequential logic, and use `OnSignal` or `OnCondition` for event-driven reactions. Mixing both approaches in the same script requires care to avoid race conditions.
+</Tip>
+
+## Event handlers
+
+Event handlers are Python functions with specific names that the simulation framework calls automatically when particular events occur.
+
+| Function | When called |
+| --- | --- |
+| `OnRun()` | Simulation starts; runs until simulation stops |
+| `OnStop()` | Simulation stops |
+| `OnSignal(signal)` | A connected signal changes value |
+| `OnCondition(condition)` | A monitored condition changes state |
+| `OnServoHeartbeat(servo)` | A servo controller completes a motion step |
+
+### Property value event handlers
+
+You can react to changes in any component property by connecting an event handler using the `addPropertyChangedHandler` API:
+
+```python
+def OnRun():
+    comp = getComponent()
+    prop = comp.getProperty("Speed")
+    prop.OnChanged = onSpeedChanged
+
+def onSpeedChanged(prop):
+    comp = getComponent()
+    path = comp.findBehavior("Path")
+    path.Speed = prop.Value
+    print("Speed updated to", prop.Value, "mm/s")
+```
+
+### Servo heartbeat
+
+The servo heartbeat fires at each interpolation step while the servo is moving. Use it for smooth real-time feedback, such as updating a progress indicator or checking for collision at each position:
+
+```python
+def OnServoHeartbeat(servo):
+    # Called every motion tick—keep this function fast
+    if servo.CurrentValue > 450:
+        servo.stop()
+```
+
+<Warning>
+  Event handlers run on the simulation thread. Do not perform blocking waits or heavy computation inside `OnSignal` or `OnServoHeartbeat`—this will slow down or freeze the simulation.
+</Warning>
+
+## Highlighting components dynamically
+
+You can change the visual appearance of components during simulation to convey status information—for example, turning a machine red when it fails, or color-coding products based on their type.
+
+### Assigning materials at runtime
+
+```python
+from vcScript import *
+
+def OnRun():
+    app = getApplication()
+    comp = getComponent()
+    
+    # Get a material from the application's material catalog
+    red_material = app.findMaterial("Red")
+    green_material = app.findMaterial("Green")
+    
+    # Apply to a specific geometry node
+    node = comp.findNode("StatusLight")
+    
+    while True:
+        # Busy: show green
+        node.Geometry.Material = green_material
+        delay(3.0)
+        # Failed: show red
+        node.Geometry.Material = red_material
+        delay(1.0)
+```
+
+### Tracking products with a dictionary
+
+When products flow through a component, you can store their original material in a dictionary and restore it when they leave:
+
+```python
+product_materials = {}
+
+def OnSignal(signal):
+    if signal.Name == "ContainerIn":
+        container = signal.Value
+        for product in container.Components:
+            # Save original and apply highlight
+            product_materials[product.Name] = product.RootNode.Geometry.Material
+            product.RootNode.Geometry.Material = getApplication().findMaterial("Yellow")
+
+def OnSignal(signal):
+    if signal.Name == "ContainerOut":
+        container = signal.Value
+        for product in container.Components:
+            # Restore original material
+            if product.Name in product_materials:
+                product.RootNode.Geometry.Material = product_materials.pop(product.Name)
+```
+
+## Component Properties panel
+
+The **Component Properties** panel (open with `F4` or from the **View** menu) shows all properties and behaviors of the currently selected component. From here you can:
+
+- Change property values without opening the component for editing
+- Connect signals visually between components in the layout
+- Monitor signal values during simulation in real time
+- Trigger manual state changes for testing
+
+When you expose a custom property (e.g., `Length`, `Speed`, `ProductType`) on your component, it appears in this panel for any user who places the component in a layout—they don't need to understand the internals to configure it.
+
+<Note>
+  To expose a property in the Component Properties panel, add it to the component's root node and set its **Category** to a descriptive string (e.g., "Configuration"). Properties with a category appear grouped by that category nam
+</Note>
+
+![Earth at night with glowing city lights visible](https://images.unsplash.com/photo-1778452419724-1f605dc17c46?q=80&w=1160&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D)

@@ -1,0 +1,177 @@
+---
+title: "Check and Optimize Robot Reachability"
+description: "Visualize the robot reach envelope, identify unreachable target points, resolve joint limit violations, and use the workspace profile to reposition robots."
+---
+
+Before committing a robot to a particular location in a workcell layout, you need to verify that it can actually reach all the required target positions. An unreachable position discovered after physical installation is expensive to correct — it may require moving the robot base, adding a linear track, or choosing a different robot entirely. Visual Components 5.0 lets you catch these problems early in the design phase by checking reachability in the simulation.
+
+## What reachability means
+
+A position is reachable if the robot can achieve the required TCP location and orientation without:
+
+- Exceeding any joint angle limit
+- Entering a mechanical singularity that prevents smooth motion
+- Colliding with itself or surrounding equipment
+
+A position that meets the geometric reach radius of the robot may still be unreachable in practice because of joint limits, configuration constraints, or obstacles along the approach path.
+
+## Setting up the layout for reachability checking
+
+<Steps>
+  <Step title="Build the workcell layout">
+    Add the robot, fixtures, and workpiece from the eCatalog. Position them where you expect them to be in the real installation. Connect any positioners or tracks as external axes.
+  </Step>
+  <Step title="Import the CAD workpiece">
+    If you are checking reach to process positions on a real part, import the CAD geometry and attach it to its fixture or positioner. Accurate workpiece placement is critical for meaningful reachability results.
+  </Step>
+  <Step title="Define the target positions">
+    Add a Path statement in the robot program and teach or define the positions the robot needs to reach. For OLP applications, generate the path from CAD geometry. For general robot tasks, jog the robot to each target and teach the points manually.
+  </Step>
+</Steps>
+
+## Jogging the robot in the program tab
+
+The quickest way to do an initial reachability check is to click each motion point in the program tree. When you click a point, the robot animates to that position. If the robot cannot reach the point, the controller panel shows an error and the robot remains in its previous position.
+
+<Tip>
+Enable **Show Joint Values** while clicking through points. If any joint value approaches or exceeds its limit (shown in red), you know the reach is marginal and the position may fail during actual program execution with a different approach angle.
+</Tip>
+
+## Checking the workspace profile
+
+The **Workspace Profile** (also called the reach envelope) gives you a visual representation of the volume the robot's TCP can occupy. It shows the outer boundary of the robot's reach at a given tool and base configuration.
+
+<Steps>
+  <Step title="Select the robot">
+    Click the robot in the 3D world to open the controller panel.
+  </Step>
+  <Step title="Open the Workspace Profile">
+    On the **Robot** tab in the ribbon, click **Workspace Profile** (or find it in the controller panel's **Properties** section). A colored volume appears around the robot showing the reachable workspace.
+  </Step>
+  <Step title="Interpret the colors">
+    The workspace profile uses color to show reach quality:
+    - **Green** — the TCP can reach this region with good joint margin
+    - **Yellow** — the region is reachable but joint angles are near their limits
+    - **Red or absent** — the TCP cannot reach this region at all
+  </Step>
+  <Step title="Compare against your target positions">
+    Visually confirm that all your process positions (for example, weld seam start and end points) fall within the green zone of the workspace profile. Positions in the yellow zone are reachable but may cause problems during actual execution.
+  </Step>
+</Steps>
+
+## Locating the robot for optimal reach
+
+If target positions fall outside the reachable workspace, you need to reposition the robot. The goal is to find a robot base location where all target positions fall comfortably within the robot's reach.
+
+<Steps>
+  <Step title="Identify the target centroid">
+    Find the geometric center of all your target positions in the 3D world. The optimal robot base location is usually at a distance from the centroid equal to roughly half the robot's rated reach radius.
+  </Step>
+  <Step title="Move the robot base">
+    Use the move handles to drag the robot to a new location. Keep the workspace profile visible so you can see how the reachable zone shifts as you move the robot.
+  </Step>
+  <Step title="Adjust height">
+    Raising the robot on a riser pedestal or platform often resolves reach problems for parts that sit at floor level or below the robot's standard mounting height. Select the robot, then use the Z position field to raise it.
+  </Step>
+  <Step title="Recheck all positions">
+    After repositioning, click through each motion point again to confirm the robot reaches all of them. Update any points where the approach angle needs adjusting now that the robot is in a new location.
+  </Step>
+</Steps>
+
+<Tip>
+When the target positions span a large area (for example, a long weld on a large frame), consider mounting the robot on a **linear track** to extend its reach. Connect the track as an external axis so the robot controller coordinates track position with robot motion.
+</Tip>
+
+## Examining robot joints and joint limits
+
+Even when positions appear visually reachable, joint limits can prevent smooth execution. Use the Joints tab to inspect joint values at each motion point.
+
+<Steps>
+  <Step title="Click a motion point in the program tree">
+    The robot animates to the stored position and the Joints tab updates to show the current joint angles.
+  </Step>
+  <Step title="Check for limit proximity">
+    Each joint shows its current angle alongside its minimum and maximum limits. If any joint is within 5–10° of a limit, the position is at risk — the robot may refuse it in practice or make unexpected large motions to avoid the limit on the next move.
+  </Step>
+  <Step title="Adjust robot arm configuration">
+    Click the **Configuration** property of the motion point and try a different arm configuration (for example, switch from **front** to **back** or from **up** to **down**). Different configurations reach the same TCP but use different joint angles, often moving away from the limits.
+  </Step>
+</Steps>
+
+## Understanding and avoiding singularity
+
+Singularity is a specific robot posture where one or more degrees of freedom are lost, preventing the controller from computing a valid inverse kinematics solution for linear motion through the singularity point.
+
+<Accordion title="Wrist singularity">
+  Wrist singularity occurs when joint 5 (the middle wrist axis) is at or near 0°. In this posture, joints 4 and 6 become co-axial and compete to produce the same rotation, causing one of them to make a large, sudden motion. You will see this as an unexpected joint 4 or 6 spin during what appears to be a slow, controlled TCP motion.
+
+  **How to avoid it:** Keep joint 5 at least 10–15° away from 0° at all positions. Adjust the tool approach angle or change the robot orientation relative to the workpiece.
+</Accordion>
+
+<Accordion title="Overhead (shoulder/polar) singularity">
+  Overhead singularity occurs when the TCP is directly above the robot base — along the joint 1 rotation axis. In this posture, joint 1 becomes undefined because any value of joint 1 gives the same TCP position.
+
+  **How to avoid it:** Do not program positions that place the TCP directly above the robot base. Offset the approach position laterally or use a different robot placement.
+</Accordion>
+
+<Note>
+When the robot encounters singularity during a simulation, you may see large joint velocities or the robot jumping between configurations. Use the **Joints** tab to inspect which joint is making the large motion and adjust the surrounding positions to route around the singular posture.
+</Note>
+
+## Starting poses for circular paths
+
+Circular (arc) motion in Visual Components uses three points: a start point, a via point, and an end point. The starting configuration of the robot (the joint values at the start point) determines which arc direction the robot travels and whether it can complete the arc without hitting a joint limit.
+
+<Steps>
+  <Step title="Teach the start point with a good configuration">
+    Jog the robot to the start of the arc and verify that the joint values leave enough margin for the robot to continue through the full arc angle without hitting a limit.
+  </Step>
+  <Step title="Teach the via point at the arc midpoint">
+    The via point determines the curvature of the arc. Place it roughly at the geometric midpoint of the intended arc.
+  </Step>
+  <Step title="Teach the end point">
+    The end point closes the arc. Ensure the robot's configuration at the end point is consistent with the start configuration to avoid configuration flips mid-arc.
+  </Step>
+</Steps>
+
+## Using positioner motions with base frames
+
+When a robot works with a positioner (turntable or headstock/tailstock), positions are often taught with a base frame attached to the positioner. As the positioner rotates, the base frame moves with it, and the robot follows.
+
+<Steps>
+  <Step title="Attach the base frame to the positioner">
+    Add a **Define Base** statement in the robot program. In the statement properties, attach the base frame to the positioner's flange node.
+  </Step>
+  <Step title="Teach positions in positioner coordinates">
+    With the base attached to the positioner, jog the positioner to the working angle and teach positions. The stored coordinates are relative to the positioner, so the robot moves to the correct absolute position regardless of the positioner angle at runtime.
+  </Step>
+  <Step title="Verify reach at all positioner angles">
+    Jog the positioner through its full range of motion and click through the motion points at several angles to confirm the robot remains within reach throughout the cycle.
+  </Step>
+</Steps>
+
+## Reachability map
+
+For a comprehensive view of reachability across the entire workspace, use the **Reachability Map** feature.
+
+<Steps>
+  <Step title="Enable the Reachability Map">
+    On the **Robot** tab, click **Reachability Map**. Visual Components calculates reachability for a grid of points surrounding the robot.
+  </Step>
+  <Step title="Set the analysis parameters">
+    Choose the tool frame and base frame to use for the analysis. Optionally set a target orientation (for applications where the TCP must approach from a fixed direction).
+  </Step>
+  <Step title="Interpret the map">
+    The map colors each grid point by reachability: green for fully reachable, yellow for reachable with limited configurations, red for unreachable. Use the map to confirm that your intended robot placement gives good coverage over the process area.
+  </Step>
+</Steps>
+
+<Tip>
+Run the reachability map early in the design phase — before finalizing fixture heights and robot pedestal dimensions. It is much easier to adjust these dimensions in the digital model than after fabrication.
+</Tip>
+
+## Next steps
+
+- [Teach robot positions interactively](/guides/robot-simulation/robot-teaching) — once reachability is confirmed, teach the motion points
+- [Robot offline programming](/guides/robot-simulation/offline-programming) — use Path Solver to resolve reachability issues in OLP paths automatically
+- [Configure I/O signals](/guides/robot-simulation/signals) — add sensor and actuator signals to complete the workcell simulation

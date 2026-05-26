@@ -1,0 +1,248 @@
+---
+title: "Write Python Scripts Inside Components"
+description: "Attach Python scripts to Visual Components components to control servo motion, respond to simulation events, and read or write component properties."
+---
+
+Component scripting is the most direct way to add behavior to a component in Visual Components. A Python Script behavior lives inside a component, runs in the simulation thread, and has immediate access to the component's properties, behaviors, and geometry nodes. You write the logic once, and it activates automatically every time the simulation runs.
+
+## How component scripts work
+
+Each component can have one or more Python Script behaviors. When the simulation starts, Visual Components compiles all scripts and spawns a simulation thread for each one. The script's `OnRun()` function (if defined) runs in a loop until the simulation stops. The `OnStart()`, `OnStop()`, and other event functions fire at the appropriate simulation lifecycle points.
+
+Scripts are stored inside the component's `.vcmx` file. When you save the component to the eCatalog or share the `.vcmx` file, the script travels with it.
+
+## Creating a script behavior
+
+<Steps>
+  <Step title="Select the component">
+    Click the component in the 3D world to select it and open its property panel.
+  </Step>
+  <Step title="Go to the Behaviors tab">
+    In the property panel, click the **Behaviors** tab.
+  </Step>
+  <Step title="Add a Python Script behavior">
+    Click **Add Behavior** → **Python Script**. A new behavior named `Script` appears in the list.
+  </Step>
+  <Step title="Open the script editor">
+    Click **Edit Script** next to the behavior. The code editor opens.
+  </Step>
+</Steps>
+
+## Accessing the component and its data
+
+Every component script can call `getComponent()` to get the component that owns the script, and `getApplication()` to access the full simulation.
+
+```python
+from vcScript import *
+
+def OnStart():
+    # Get the component that owns this script
+    comp = getComponent()
+    print(f'Script is running in: {comp.Name}')
+
+    # Access a property by name
+    speed = comp.getProperty('Speed').Value
+    print(f'Speed: {speed} m/s')
+
+    # Modify a property
+    comp.getProperty('Speed').Value = 2.0
+```
+
+### Listing all properties
+
+If you are not sure what properties a component has, print them all from the script editor:
+
+```python
+from vcScript import *
+
+def OnStart():
+    comp = getComponent()
+    for prop in comp.Properties:
+        print(f'{prop.Name}: {prop.Value}  (type: {prop.Type})')
+```
+
+## Managing servo controller motion
+
+A common scripting task is controlling a servo controller—the behavior that drives joint-based motion on machines. The following script moves a servo to a target position, waits for it to complete, then returns to the starting position.
+
+```python
+from vcScript import *
+
+def OnRun():
+    comp = getComponent()
+    servo = comp.findBehaviour('ServoController')
+
+    if not servo:
+        print('ERROR: ServoController not found')
+        return
+
+    while True:
+        # Move joint 0 to 90 degrees
+        servo.Joints[0].TargetValue = 90.0
+        servo.Joints[0].move()
+
+        # Wait for motion to complete before continuing
+        delay(servo.Joints[0].TravelTime)
+
+        # Return to 0 degrees
+        servo.Joints[0].TargetValue = 0.0
+        servo.Joints[0].move()
+        delay(servo.Joints[0].TravelTime)
+
+        # Wait 1 second at home before next cycle
+        delay(1.0)
+```
+
+<Note>
+`delay()` consumes simulation time. Using `delay(servo.Joints[0].TravelTime)` waits exactly as long as the joint motion takes, keeping the script in sync with the physical animation.
+</Note>
+
+## Changing material dynamically
+
+You can change the visual material of a geometry node during a simulation to reflect component state—for example, turning a part red when it fails a quality check.
+
+```python
+from vcScript import *
+
+def OnRun():
+    comp = getComponent()
+    body = comp.findNode('Body')
+
+    # Retrieve materials defined on the component
+    ok_mat = comp.findMaterial('GreenMaterial')
+    fail_mat = comp.findMaterial('RedMaterial')
+
+    inspect_signal = comp.findBehaviour('InspectDone')
+    result_signal = comp.findBehaviour('PassFail')
+
+    while True:
+        # Wait for inspection to complete
+        waitSignal(inspect_signal, True)
+        inspect_signal.Value = False
+
+        # Apply material based on result
+        if result_signal.Value:
+            body.Material = ok_mat
+            print('Part passed inspection')
+        else:
+            body.Material = fail_mat
+            print('Part failed inspection')
+```
+
+<Tip>
+Materials must be defined on the component before you can reference them in a script. Use the **Modeling** tab to add materials to the component, then reference them by name in the script.
+</Tip>
+
+## Responding to simulation events
+
+Beyond `OnStart()` and `OnStop()`, component scripts can define additional event functions:
+
+```python
+from vcScript import *
+
+def OnStart():
+    """Fires once when the simulation starts."""
+    comp = getComponent()
+    comp.getProperty('CycleCount').Value = 0
+
+def OnStop():
+    """Fires when the simulation stops (normally or via reset)."""
+    comp = getComponent()
+    count = comp.getProperty('CycleCount').Value
+    print(f'Total cycles completed: {count}')
+
+def OnPause():
+    """Fires when the simulation is paused."""
+    print('Simulation paused')
+
+def OnResume():
+    """Fires when the simulation resumes after a pause."""
+    print('Simulation resumed')
+
+def OnRun():
+    """Runs in a loop throughout the simulation."""
+    comp = getComponent()
+    trigger = comp.findBehaviour('CycleTrigger')
+
+    while True:
+        waitSignal(trigger, True)
+        trigger.Value = False
+        count = comp.getProperty('CycleCount').Value
+        comp.getProperty('CycleCount').Value = count + 1
+```
+
+## Controlling another component from a script
+
+A script in one component can reach across to modify another component in the layout. This is how you build coordination logic between a controller component and the machines it governs.
+
+```python
+from vcScript import *
+
+def OnRun():
+    app = getApplication()
+
+    # Find conveyor by name
+    conveyor = app.findComponent('MainConveyor')
+    if not conveyor:
+        print('Conveyor not found')
+        return
+
+    speed_prop = conveyor.getProperty('Speed')
+    run_signal = conveyor.findBehaviour('RunSignal')
+
+    while True:
+        # Start the conveyor at 0.5 m/s
+        speed_prop.Value = 0.5
+        run_signal.Value = True
+        delay(10.0)
+
+        # Stop the conveyor for 2 seconds
+        run_signal.Value = False
+        delay(2.0)
+```
+
+## Accessing geometry nodes
+
+The component's node tree represents the hierarchy of geometric features. You can traverse it to access individual nodes, set visibility, or change transforms.
+
+```python
+from vcScript import *
+
+def OnStart():
+    comp = getComponent()
+
+    # Print all node names
+    def print_nodes(node, indent=0):
+        print(' ' * indent + node.Name)
+        for child in node.Children:
+            print_nodes(child, indent + 2)
+
+    print_nodes(comp.RootNode)
+
+def OnRun():
+    comp = getComponent()
+    indicator_light = comp.findNode('StatusLight')
+
+    while True:
+        # Toggle visibility every second
+        indicator_light.Visible = not indicator_light.Visible
+        delay(1.0)
+```
+
+## Printing to the Output panel
+
+All `print()` calls from component scripts go to the **Output** panel (View → Output). This is the primary debugging tool for component scripts.
+
+```python
+from vcScript import *
+
+def OnStart():
+    comp = getComponent()
+    sim = getSimulation()
+    print(f'[{comp.Name}] Simulation time: {sim.SimTime:.2f}s')
+    print(f'[{comp.Name}] Properties: {[p.Name for p in comp.Properties]}')
+```
+
+<Tip>
+Prefix print messages with the component name (as shown above) when you have multiple components with scripts. This makes it easy to identify which component generated each line of output.
+</Tip>

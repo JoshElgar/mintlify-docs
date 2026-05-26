@@ -1,0 +1,215 @@
+---
+title: "Export and Import CAD, Data, and Floor Plans"
+description: "Export Visual Components layouts to STEP, JT, and FBX, import and combine CAD files, work with DWG floor plans, and exchange data with CSV files."
+---
+
+Visual Components supports a broad range of import and export workflows so you can move simulation geometry, layout data, and production records into and out of other tools. Whether you need to send a finished layout to a CAD system, import an existing factory floor plan, or extract cycle-time data for a spreadsheet, the export and import commands in the Output and Home tabs handle these tasks without requiring a third-party converter.
+
+## Exporting geometry to CAD formats
+
+Visual Components can export the entire layout or selected components to several industry-standard 3D CAD formats.
+
+<Accordion title="Supported export formats">
+| Format | Extension | Use case |
+|--------|-----------|----------|
+| STEP | `.step`, `.stp` | Exchange with CAD systems (CATIA, NX, SolidWorks) |
+| JT | `.jt` | Lightweight visualization in Siemens tools |
+| OBJ | `.obj` | 3D rendering and game engines |
+| FBX | `.fbx` | Animation tools, Autodesk products |
+| STL | `.stl` | 3D printing |
+</Accordion>
+
+### Exporting to STEP, JT, or OBJ
+
+<Steps>
+  <Step title="Open your layout">
+    Load the layout containing the geometry you want to export.
+  </Step>
+  <Step title="Select what to export">
+    To export the entire layout, make sure nothing is selected. To export specific components, select them in the 3D world or Component Graph before running the export command.
+  </Step>
+  <Step title="Run the export command">
+    Go to **Output** tab → **Export Geometry** (or **File** → **Export**). Choose the target format from the dropdown.
+  </Step>
+  <Step title="Configure export options">
+    Depending on the format, you may be able to set options such as:
+    - **Tessellation quality**: higher quality produces smoother curved surfaces but larger files
+    - **Include hidden components**: export geometry marked as invisible in the layout
+    - **Apply current transforms**: flatten all positioning into the exported geometry
+  </Step>
+  <Step title="Save the file">
+    Choose a filename and location. Visual Components writes the file and reports any warnings in the Output panel.
+  </Step>
+</Steps>
+
+<Note>
+STEP and JT export requires the **Geometry Export** license feature. If you do not see these options in the Output tab, contact your Visual Components distributor to check your license.
+</Note>
+
+### Previewing exported files
+
+After exporting, you can preview STEP and JT files using the HOOPS Communicator viewer that is bundled with Visual Components. Right-click the exported file in Windows Explorer and select **Preview with HOOPS Viewer** to inspect the geometry before sending it to a customer or colleague.
+
+## Importing and combining CAD files
+
+### Importing a single CAD file
+
+<Steps>
+  <Step title="Use the import command">
+    Go to **Home** tab → **Import** or drag the file directly into the 3D world. Visual Components supports STEP, JT, IGES, Parasolid, and several other native CAD formats.
+  </Step>
+  <Step title="Set import options">
+    In the import dialog, choose whether to import as a new component or merge geometry into an existing one. Set the unit scale if the source file uses different units from your layout (millimeters vs. inches).
+  </Step>
+  <Step title="Position the component">
+    After import, the geometry appears in the center of the 3D world. Use the Position tool or the **Snap** tool to align it with other components.
+  </Step>
+</Steps>
+
+### Combining geometry from multiple CAD files
+
+When a physical machine arrives as several separate CAD files (for example, separate files for the base, arms, and end-effector), you can merge them into a single Visual Components component.
+
+<Steps>
+  <Step title="Import the first file">
+    Import the first CAD file. This creates a new component in the 3D world.
+  </Step>
+  <Step title="Import additional files into the same component">
+    Select the existing component in the Component Graph. Then import the next CAD file and choose **Import into selected component** in the import dialog. The new geometry is added as a child node of the existing component.
+  </Step>
+  <Step title="Snap geometry to the correct origin">
+    Select the imported geometry node in the Component Graph. Use the **Snap to Origin** tool to align it to the component's coordinate origin, or use the **Align** tool to position it relative to the existing geometry.
+  </Step>
+  <Step title="Delete duplicate or unwanted nodes">
+    After aligning, remove any redundant geometry nodes (for example, duplicate base plates) by selecting them in the Component Graph and pressing **Delete**.
+  </Step>
+  <Step title="Save the combined component">
+    Right-click the component in the Component Graph and select **Save Component** to save it as a `.vcmx` file for reuse.
+  </Step>
+</Steps>
+
+## Simplifying imported 3D CAD
+
+Detailed CAD files from mechanical design tools often contain far more geometric complexity than is needed for simulation. Simplified geometry improves rendering performance and reduces file sizes.
+
+<Steps>
+  <Step title="Select the component">
+    Select the imported component in the 3D world or Component Graph.
+  </Step>
+  <Step title="Open the Simplify tool">
+    Go to **Modeling** tab → **Simplify Geometry** (or right-click the component → **Simplify**).
+  </Step>
+  <Step title="Set simplification level">
+    Drag the quality slider to reduce polygon count. A preview updates in real time to show the simplified result. For simulation purposes, a 70–80% reduction is often acceptable without visible quality loss.
+  </Step>
+  <Step title="Apply and verify">
+    Click **Apply**. Check the component in the 3D world to confirm the simplification is acceptable, then save the component.
+  </Step>
+</Steps>
+
+<Tip>
+Simplify geometry before adding behaviors and scripts to a component. This avoids having to repeat the simplification step if you add it to the eCatalog later.
+</Tip>
+
+## Importing and exporting floor plans
+
+Floor plans (DWG or DXF files from AutoCAD) give you an accurate reference frame for placing machinery in your layout.
+
+### Importing a floor plan
+
+<Steps>
+  <Step title="Use the Import Floor Plan command">
+    Go to **Home** tab → **Import Floor Plan** and select your DWG or DXF file.
+  </Step>
+  <Step title="Set the scale">
+    In the import dialog, confirm the unit scale. AutoCAD files often use millimeters, but some are authored in meters or inches. Setting the wrong scale results in a floor plan that is 1000× too large or too small.
+  </Step>
+  <Step title="Position the floor plan">
+    The floor plan appears as a flat component in the 3D world. Use the **Align** tool or **Snap** tool to position components from the eCatalog onto the floor plan.
+  </Step>
+</Steps>
+
+### Exporting a floor plan from the 3D world
+
+If you have built your layout in Visual Components and need to generate a 2D drawing for facilities management, you can export a top-down floor plan.
+
+<Steps>
+  <Step title="Set the camera to top view">
+    Press the **Top** view button in the viewport to switch to an orthographic top-down view.
+  </Step>
+  <Step title="Run the Export Floor Plan command">
+    Go to **Output** tab → **Export Floor Plan**. Choose DWG or DXF as the output format.
+  </Step>
+  <Step title="Set paper space settings">
+    Configure the scale, paper size, and which layers to include. The exported DWG preserves the component names as layer names, making it easy to filter specific equipment types in AutoCAD.
+  </Step>
+</Steps>
+
+## Importing and exporting data with CSV files
+
+CSV files let you exchange structured data between Visual Components and external tools such as Excel, MES systems, or databases.
+
+### Reading CSV data in Python
+
+```python
+from vcScript import *
+import csv
+
+def OnStart():
+    app = getApplication()
+    filepath = app.getUserFilePath('production_schedule.csv')
+
+    with open(filepath, newline='') as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            part_type = row['PartType']
+            quantity = int(row['Quantity'])
+            print(f'Scheduling {quantity} units of {part_type}')
+```
+
+### Writing CSV data from a simulation
+
+```python
+from vcScript import *
+import csv
+
+def OnStop():
+    app = getApplication()
+    results = []
+
+    for comp in app.Components:
+        stats = comp.findBehaviour('Statistics')
+        if stats:
+            results.append({
+                'Component': comp.Name,
+                'Throughput': stats.getProperty('Throughput').Value,
+                'Utilization': stats.getProperty('Utilization').Value,
+            })
+
+    output_path = app.getUserFilePath('simulation_results.csv')
+    with open(output_path, 'w', newline='') as csvfile:
+        fieldnames = ['Component', 'Throughput', 'Utilization']
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(results)
+
+    print(f'Results written to {output_path}')
+```
+
+<Note>
+`app.getUserFilePath()` returns the path to a file in the user's Visual Components data folder. If the file does not exist for reading, this call raises a `FileNotFoundError`. For writing, the folder is created automatically if it does not exist.
+</Note>
+
+### Typical CSV workflow
+
+<Steps>
+  <Step title="Prepare the CSV file">
+    Create a CSV with headers matching the property names your script expects. Save it in the user data folder or specify an absolute path in the script.
+  </Step>
+  <Step title="Load data at simulation start">
+    Use `OnStart()` to read the CSV and configure components (for example, set machine cycle times or conveyor speeds) based on the file contents.
+  </Step>
+  <Step title="Write results at simulation end">
+    Use `OnStop()` to collect statistics and write them to a results CSV. This integrates cleanly with automated batch simulation runs.
+  </Step>
+</Steps>

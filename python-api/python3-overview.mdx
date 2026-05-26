@@ -1,0 +1,222 @@
+---
+title: "Python 3 Scripting in Visual Components 5.0"
+description: "Learn what changed from Python 2.7 in Visual Components 5.0, how to use the script editor, access properties, and handle simulation lifecycle events."
+---
+
+Visual Components 5.0 introduces Python 3 as the primary scripting runtime for component scripts. If you have used Python API 2.7, the core concepts are identical—you still write functions like `OnStart()`, call `getComponent()`, and work with the same `vcScript` objects—but you now have access to modern Python syntax, the full standard library, and better tooling in the script editor.
+
+## What changed from Python 2.7
+
+<Accordion title="Syntax differences">
+Python 3 enforces stricter syntax rules that Python 2 was lenient about:
+
+- `print` is a function, not a statement: use `print('hello')` not `print 'hello'`
+- Integer division uses `//`: `5 / 2` returns `2.5` in Python 3, not `2`
+- String handling: all strings are Unicode by default; no `u'...'` prefix needed
+- `xrange` is removed; use `range()` for all iteration
+- Dictionary methods `.keys()`, `.values()`, `.items()` return views, not lists
+</Accordion>
+
+<Accordion title="New features available">
+Python 3 unlocks language features that are particularly useful in simulation scripting:
+
+- **f-strings**: `f'Speed is {speed:.2f} m/s'` — cleaner than `.format()`
+- **Type annotations**: `def OnStart() -> None:` — useful for larger scripts
+- **Walrus operator**: `if (n := len(items)) > 10:`
+- **Dataclasses**: define data containers without boilerplate
+- **`pathlib`**: modern file path handling instead of `os.path`
+- **`json`, `csv`, `sqlite3`**: full standard library available without external installation
+</Accordion>
+
+## Opening the script editor in VC 5.0
+
+<Steps>
+  <Step title="Select a component">
+    Click the component in the 3D world or the Component Graph to select it.
+  </Step>
+  <Step title="Open the Behaviors tab">
+    In the property panel on the right, click the **Behaviors** tab. If no Python Script behavior exists, click **Add Behavior** → **Python Script** to create one.
+  </Step>
+  <Step title="Open the editor">
+    Click **Edit Script** next to the Python Script behavior. The script editor opens as a panel or a floating window. You can detach it to a second monitor.
+  </Step>
+  <Step title="Verify the Python version">
+    At the top of the editor, the Python version indicator shows which runtime is active. For VC 5.0 components, this should show **Python 3**. If it shows Python 2.7, check the behavior's **Python Version** property and change it.
+  </Step>
+</Steps>
+
+## Key patterns in Python 3 component scripts
+
+### Importing modules
+
+In a Python 3 component script, `vcScript` is always available. Import other modules at the top of the script as you normally would in Python:
+
+```python
+from vcScript import *
+import json
+import math
+from pathlib import Path
+
+def OnStart():
+    comp = getComponent()
+    print(f'Component {comp.Name} started')
+```
+
+### Event handler functions
+
+The simulation runtime calls these functions at specific points. You define the ones you need; you do not need to implement all of them.
+
+```python
+from vcScript import *
+
+def OnStart():
+    """Called once when the simulation starts."""
+    comp = getComponent()
+    comp.getProperty('Status').Value = 'Running'
+
+def OnStop():
+    """Called when the simulation stops."""
+    comp = getComponent()
+    comp.getProperty('Status').Value = 'Idle'
+
+def OnRun():
+    """Called in a loop while the simulation runs (blocking loop)."""
+    # Use delay() inside OnRun() to consume simulation time
+    delay(1.0)
+```
+
+<Note>
+`OnRun()` runs in a separate simulation thread per component. If you do not call `delay()` or another blocking function inside `OnRun()`, it will run as a busy loop and starve other simulation threads.
+</Note>
+
+### Consuming simulation time
+
+To wait for simulation time to pass without blocking the real-time clock, use `delay()`:
+
+```python
+from vcScript import *
+
+def OnRun():
+    comp = getComponent()
+    while True:
+        # Do work
+        print(f'Cycle at t={getSimulation().SimTime:.1f}s')
+        # Wait 2 simulation seconds before the next cycle
+        delay(2.0)
+```
+
+To wait for a signal value, use `waitSignal()`:
+
+```python
+from vcScript import *
+
+def OnRun():
+    comp = getComponent()
+    trigger = comp.findBehaviour('TriggerSignal')
+
+    while True:
+        # Block until the signal goes True
+        waitSignal(trigger, True)
+        print('Trigger received, processing...')
+        delay(0.5)
+        # Signal done
+        trigger.Value = False
+```
+
+### Working with properties
+
+Read and write component properties through the `getProperty()` method:
+
+```python
+from vcScript import *
+
+def OnStart():
+    comp = getComponent()
+
+    # Read a property
+    speed = comp.getProperty('Speed').Value
+    print(f'Current speed: {speed}')
+
+    # Write a property
+    comp.getProperty('Speed').Value = 1.5
+    print('Speed set to 1.5 m/s')
+```
+
+<Tip>
+Use the component's property panel to see the exact property names. Names are case-sensitive.
+</Tip>
+
+### Changing component material
+
+You can dynamically change the visual material of a component's geometry node during a simulation—useful for indicating status changes (for example, turning a part red when it fails inspection):
+
+```python
+from vcScript import *
+
+def OnRun():
+    comp = getComponent()
+    geometry_node = comp.findNode('BodyGeometry')
+    ok_material = comp.findMaterial('GreenMaterial')
+    fail_material = comp.findMaterial('RedMaterial')
+
+    while True:
+        # Simulate inspection check
+        passed = check_quality()  # your logic here
+        if passed:
+            geometry_node.Material = ok_material
+        else:
+            geometry_node.Material = fail_material
+        delay(1.0)
+```
+
+### Accessing the application and other components
+
+From inside a component script, you can reach any other component in the layout:
+
+```python
+from vcScript import *
+
+def OnStart():
+    app = getApplication()
+
+    # Find another component by name
+    robot = app.findComponent('IRB 4600')
+    if robot:
+        ctrl = robot.findBehaviour('RobotController')
+        print(f'Robot found: {robot.Name}, controller: {ctrl}')
+
+    # Iterate all components
+    for comp in app.Components:
+        print(comp.Name)
+```
+
+## Comparing Python 2.7 and Python 3 syntax
+
+The following table shows common patterns and how they differ between the two versions:
+
+| Task | Python 2.7 | Python 3 |
+|------|-----------|---------|
+| Print | `print 'hello'` | `print('hello')` |
+| String formatting | `'Speed: %.1f' % speed` | `f'Speed: {speed:.1f}'` |
+| Integer division | `5 / 2 == 2` | `5 // 2 == 2` |
+| Range iteration | `for i in xrange(10):` | `for i in range(10):` |
+| Unicode string | `u'text'` | `'text'` (all strings are Unicode) |
+| File I/O | `open('file', 'r').read()` | Same, but `pathlib.Path` preferred |
+
+## Running scripts interactively
+
+To run a standalone Python script outside of a component (for example, to batch-modify a layout), use the **Script Editor** pane:
+
+<Steps>
+  <Step title="Open the Script Editor pane">
+    Go to **Modeling** tab → **Script Editor**, or press `Ctrl+Shift+S`.
+  </Step>
+  <Step title="Write your script">
+    Type or paste a Python 3 script directly in the editor. You have access to all `vcScript` objects.
+  </Step>
+  <Step title="Execute">
+    Click **Run** (or press `F5`). The script runs immediately in the current layout context. Output appears in the Output panel.
+  </Step>
+</Steps>
+
+This is useful for one-off operations such as renaming all components, setting properties in bulk, or testing API calls before embedding them in a component script.

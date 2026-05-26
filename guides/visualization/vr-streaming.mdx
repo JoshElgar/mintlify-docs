@@ -1,0 +1,143 @@
+---
+title: "Stream Simulations to VR and Web Viewers"
+description: "Stream Visual Components simulations to VR headsets, walk through layouts in interactive VR, live-stream to a browser, and embed custom web HMIs."
+---
+
+Visual Components can broadcast a running simulation to external viewers without stopping or modifying the simulation itself. You can stream to a VR headset for an immersive walkthrough, broadcast to a web browser for remote stakeholders, or embed a custom web-based HMI panel directly inside the simulation environment. Each streaming mode targets a different collaboration scenario, and all of them are available across Visual Components 5.0 product editions.
+
+## Streaming simulation to VR
+
+Animation streaming lets any device running Visual Components Experience connect to a live simulation over a local network or the internet. The Experience app renders the scene in real time as the simulation runs.
+
+### Requirements
+
+- Visual Components 5.0 (any edition) on the simulation host machine
+- Visual Components Experience app installed on the viewing device (Android or iOS)
+- Both devices on the same network for local streaming, or a public IP for remote access
+
+### Enable and start streaming
+
+<Steps>
+  <Step title="Enable animation streaming">
+    In Visual Components, go to **Output** tab → **Animation Streaming** and toggle streaming **On**. A port number is displayed (default: 8080). Make sure your firewall allows traffic on this port.
+  </Step>
+  <Step title="Open a layout">
+    Open the simulation layout you want to stream. The layout must be loaded before clients can connect.
+  </Step>
+  <Step title="Start streaming">
+    Click **Start Streaming** in the Animation Streaming panel. Visual Components begins broadcasting the scene data.
+  </Step>
+  <Step title="Connect from Experience">
+    On the viewing device, open Visual Components Experience. Tap **Connect to Stream** and enter the IP address and port of the simulation host. The scene appears on the device.
+  </Step>
+  <Step title="Start the simulation">
+    Resume or start the simulation on the host machine. The Experience app updates in real time as components move.
+  </Step>
+</Steps>
+
+<Note>
+The streaming connection is read-only by default: viewers in Experience can navigate the 3D scene freely but cannot modify the simulation. Interactive VR (described below) enables two-way interaction.
+</Note>
+
+### Changing views and manipulating components
+
+Once connected, Experience users can:
+
+- **Orbit, pan, and zoom** the 3D scene using touch gestures
+- **Switch views** using predefined camera bookmarks saved in the layout
+- **Teleport** to predefined locations within the scene (useful for large layouts)
+
+If the layout has components marked as **pickable** (see interactive VR setup below), Experience users can also grab and reposition those components.
+
+## Interactive VR
+
+Interactive VR goes beyond passive viewing—it lets you physically walk through a simulation using a VR headset and interact with components in the scene. You can pick up objects, jog robot joints, and activate machine controls using a virtual HMI panel.
+
+### Configuring your layout for interactive VR
+
+<Steps>
+  <Step title="Mark components as pickable">
+    Select a component in the 3D world and open its properties. Find the **Pickable** property and set it to `True`. Pickable components can be grabbed and moved in VR.
+  </Step>
+  <Step title="Make robot joints joggable">
+    Select a robot and open its **RobotController** behavior properties. Enable **Joggable Joints** to allow VR users to physically drag individual robot axes during the simulation.
+  </Step>
+  <Step title="Add an Interactive VR HMI">
+    From the eCatalog, add an **Interactive VR HMI** component to your layout. This creates a floating panel in VR that displays signals and buttons you define. Connect it to the signals in your simulation to give VR users control over machines and conveyors.
+  </Step>
+  <Step title="Set the VR origin">
+    Place a **VR Origin** marker in your layout at the position where the VR user will start. This determines scale and orientation inside the headset.
+  </Step>
+</Steps>
+
+<Tip>
+For large factory layouts, add multiple VR Origin markers at different locations and let VR users teleport between them. This avoids requiring users to physically walk across the full simulated floor area.
+</Tip>
+
+### Interacting in VR
+
+With a compatible VR headset connected to Experience:
+
+- **Walk** through the simulation in real time as it runs
+- **Grab pickable components** using the controller triggers
+- **Jog robot joints** by pointing at a robot arm and using the joystick
+- **Use the HMI panel** to start/stop conveyors, toggle signals, and monitor status
+
+## Live streaming to the web (YouTube / OBS)
+
+You can broadcast your simulation as a live video stream to any platform that accepts RTMP input, such as YouTube Live or Twitch. This requires third-party screen capture software—Open Broadcaster Software (OBS) is the most common choice.
+
+### Setting up a live stream with OBS
+
+<Steps>
+  <Step title="Set up your layout in Visual Components">
+    Open the layout you want to stream and set the simulation to **Virtual time** mode. Switch to **Presentation view** (View → Presentation View) to hide the ribbon and panels and show only the 3D world.
+  </Step>
+  <Step title="Log in to your streaming platform">
+    Go to your streaming platform (for example, YouTube Studio) and create a new live stream. Copy the **stream key** from the platform settings.
+  </Step>
+  <Step title="Configure OBS">
+    Open OBS Studio. Go to **Settings → Stream**, select your platform (YouTube, Custom RTMP, etc.), and paste the stream key.
+  </Step>
+  <Step title="Add Visual Components as a source">
+    In OBS, click **+** under **Sources** and select **Window Capture** (Windows) or **Display Capture**. Choose the Visual Components window. Resize the capture area as needed.
+  </Step>
+  <Step title="Configure stream settings">
+    In OBS settings, set the output resolution and bitrate to match your platform's recommended settings. For 1080p at 30fps, a bitrate of 4500–6000 Kbps is typical.
+  </Step>
+  <Step title="Start streaming">
+    Click **Start Streaming** in OBS. Then start the simulation in Visual Components. Your simulation is now live. Check the platform dashboard to confirm the stream is active.
+  </Step>
+  <Step title="Stop streaming">
+    When done, click **Stop Streaming** in OBS, then stop the simulation in Visual Components. The platform archives the stream as a replay video.
+  </Step>
+</Steps>
+
+<Warning>
+Streaming at high resolution while running a complex simulation can strain your GPU. If you notice frame drops or stuttering, reduce the stream resolution in OBS or lower the simulation complexity before broadcasting.
+</Warning>
+
+## Web viewer for custom HMIs
+
+Visual Components Experience includes an `ExperienceWebsiteViewer` component that embeds a web page (or local HTML file) as a panel inside the 3D world. This lets you display a custom HMI built with any web technology—HTML, JavaScript, or a dashboard framework—alongside the simulation.
+
+### Setting up the web viewer
+
+<Steps>
+  <Step title="Add the ExperienceWebsiteViewer component">
+    In the eCatalog, search for **ExperienceWebsiteViewer** and drag it into your layout. Place it where the HMI panel should appear in the 3D world.
+  </Step>
+  <Step title="Configure the URL">
+    Select the component and set its **URL** property to the address of your web service. You can point to a local HTTP server running on `localhost` or to a remote dashboard URL.
+  </Step>
+  <Step title="Resize and position the panel">
+    Use the component's **Width** and **Height** properties to set the panel dimensions. In the 3D world, the panel appears as a flat surface that you can position and rotate like any other component.
+  </Step>
+  <Step title="Connect simulation signals to the web page">
+    Your web page can communicate with the simulation by reading signal values via the Visual Components REST API (if enabled) or by using WebSocket messages. This allows the HMI to display live KPIs such as throughput, cycle time, and machine state.
+  </Step>
+</Steps>
+
+<Note>
+The web viewer feature is available in Visual Components 4.5.0 and later. Both the desktop application and the Experience app support it, so the same HMI appears consistently whether you are at a workstation or using a tablet in the field.
+</Note>

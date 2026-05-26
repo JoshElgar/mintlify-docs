@@ -1,0 +1,179 @@
+---
+title: "Virtual Commissioning with Siemens PLCs"
+description: "Connect Visual Components to TwinCAT, Siemens S7, and PLCSim Advanced. Add signals and map them to PLC variables for virtual commissioning."
+---
+
+Virtual commissioning lets you test and validate PLC logic against a 3D simulation before the real machine is built or installed. Visual Components 5.0 supports multiple Siemens and Beckhoff PLC environments through OPC UA, enabling you to close the loop between a running PLC program and a simulation that responds exactly as the real equipment would. This page covers the TwinCAT (Beckhoff), Siemens S7, and PLCSim Advanced workflows.
+
+## Workflow overview
+
+Regardless of the specific PLC platform, virtual commissioning in Visual Components follows the same high-level process:
+
+1. **Prepare the simulation layout** — add signal behaviors to components so they expose the I/O points the PLC expects
+2. **Configure the PLC project** — ensure variables are accessible over OPC UA or the native protocol
+3. **Establish the connection** — add a server in the Visual Components Connectivity panel
+4. **Pair variables** — map each simulation signal to a PLC variable
+5. **Run simultaneously** — start both the PLC program and the simulation and verify behavior
+
+<Note>
+  The Connectivity feature requires a Visual Components Premium or Professional license. Make sure your license includes Connectivity before proceeding.
+</Note>
+
+## Making components PLC-ready
+
+"PLC-ready" means a component has boolean or real signal behaviors that correspond to PLC I/O addresses. You add these signals in the component editor and wire them to the component's logic.
+
+<Steps>
+  <Step title="Identify required I/O signals">
+    Work from the PLC program's variable list or I/O table. For each actuator (conveyor, cylinder, motor), there is typically one or more output bits from the PLC and one or more feedback or sensor bits back to the PLC. Document these before opening Visual Components.
+  </Step>
+  <Step title="Add signal behaviors to the component">
+    Open the component for editing. In the Component Graph, right-click the root node and choose **Add Behavior > Boolean Signal** (or Real Signal for analog values). Create one signal per I/O point and name it to match the PLC variable convention.
+
+    Example signals for a conveyor:
+    - `ConveyorRun` (Boolean, input) — PLC output enables the conveyor
+    - `ConveyorSpeed` (Real, input) — PLC analog output sets belt speed in mm/s
+    - `SensorIn` (Boolean, output) — part detected at conveyor entry
+    - `SensorOut` (Boolean, output) — part detected at conveyor exit
+  </Step>
+  <Step title="Wire signals to component logic">
+    In the component's Python script, add an `OnSignal` handler that reacts to incoming signals and writes outgoing signals when events occur:
+
+    ```python
+    def OnSignal(signal):
+        comp = getComponent()
+        if signal.Name == "ConveyorRun":
+            path = comp.findBehavior("ConveyorPath")
+            path.Running = signal.Value
+        elif signal.Name == "ConveyorSpeed":
+            path = comp.findBehavior("ConveyorPath")
+            path.Speed = signal.Value
+    ```
+  </Step>
+</Steps>
+
+## Connecting a local TwinCAT PLC (Beckhoff)
+
+TwinCAT runs on the same Windows PC as Visual Components, which means you connect via the local ADS/OPC UA interface rather than over a network.
+
+<Steps>
+  <Step title="Enable the Connectivity panel">
+    In Visual Components, open the **Connectivity** tab from the ribbon. If it is not visible, enable it from **View > Panels > Connectivity**.
+  </Step>
+  <Step title="Add a TwinCAT server">
+    Click **Add Server** and choose **OPC UA** (TwinCAT 3 exposes a local OPC UA server). Enter the local endpoint URL:
+
+    ```
+    opc.tcp://localhost.ads:4840
+    ```
+
+    For TwinCAT 2, you may need to use the older ADS protocol instead—check your TwinCAT documentation for the correct endpoint.
+  </Step>
+  <Step title="Create and configure your PLC project">
+    In TwinCAT XAE (the TwinCAT engineering environment), create a PLC project with the variables you need. In the variable declaration, use the `{attribute 'OPC.UA.DA' := '1'}` pragma to expose specific variables over OPC UA, or enable OPC UA publishing globally in the TwinCAT System Manager.
+  </Step>
+  <Step title="Activate and run the TwinCAT project">
+    Build the project, activate the configuration, and set the TwinCAT system to **Run** mode. The PLC program is now executing.
+  </Step>
+  <Step title="Establish the connection in Visual Components">
+    With TwinCAT running, click **Connect** in the Visual Components server entry. The status should turn green and the node tree should populate with your PLC variables.
+  </Step>
+  <Step title="Add simulation-to-server variable pairs">
+    Click **Add Pair** for each signal. Set the simulation signal on the left and the corresponding TwinCAT variable on the right. Set the direction:
+    - Simulation signal (sensor output) → server variable (PLC input): `Simulation → Server`
+    - Server variable (PLC output) → simulation signal (actuator input): `Server → Simulation`
+  </Step>
+  <Step title="Run simulation and PLC simultaneously">
+    Press **Play** in Visual Components. Confirm that PLC outputs drive the simulation and that simulation sensor signals reach the PLC correctly.
+  </Step>
+</Steps>
+
+## Connecting to a Siemens S7 PLC
+
+Physical Siemens S7-300, S7-400, and S7-1500 PLCs can be connected to Visual Components over OPC UA if the PLC firmware supports it (S7-1500 natively; S7-300/400 require a gateway).
+
+<Steps>
+  <Step title="Configure OPC UA on the S7-1500">
+    In TIA Portal, open the PLC properties and navigate to **General > OPC UA > Server**. Enable the OPC UA server. Under **Accessible from** mark the network interface, and set the endpoint port (default 4840). Build and download the configuration to the PLC.
+  </Step>
+  <Step title="Expose variables via OPC UA DB">
+    In your TIA Portal project, mark the data block (DB) variables you want to expose as OPC UA accessible. Right-click the DB in the project tree, go to **Properties > Attributes**, and enable **Accessible from OPC UA**. Individual variable accessibility can be set per tag in the DB interface.
+  </Step>
+  <Step title="Find the PLC IP address">
+    Note the PLC's IP address from **TIA Portal > Device Configuration > PROFINET interface**. Ensure the Visual Components PC and the PLC are on the same subnet.
+  </Step>
+  <Step title="Add the server in Visual Components">
+    In the Connectivity panel, add an OPC UA server with the PLC endpoint:
+
+    ```
+    opc.tcp://192.168.0.1:4840
+    ```
+
+    Replace `192.168.0.1` with your actual PLC IP address.
+  </Step>
+  <Step title="Browse and pair variables">
+    Browse the server node tree to locate your DB variables. Add variable pairs as described in the general workflow above.
+  </Step>
+</Steps>
+
+<Warning>
+  For S7-1500, OPC UA server functionality may require a specific firmware version (V2.0 or later is recommended). Check your PLC's firmware release notes for OPC UA compatibility.
+</Warning>
+
+## Connecting PLCSim Advanced over OPC UA
+
+PLCSim Advanced is the recommended approach for virtual commissioning without physical hardware. It provides a full software simulation of an S7-1500 CPU and exposes a native OPC UA server.
+
+<Steps>
+  <Step title="Install and launch PLCSim Advanced">
+    Install Siemens PLCSim Advanced (version 3.0 or later recommended). Open the PLCSim Advanced Control Panel and create a new virtual controller instance. Note the assigned name (e.g., `PLC_1`).
+  </Step>
+  <Step title="Enable OPC UA in PLCSim Advanced">
+    In the PLCSim Advanced instance settings, enable the OPC UA server. The default endpoint URL is:
+
+    ```
+    opc.tcp://localhost:4840
+    ```
+
+    Note the runtime license requirement: the OPC UA server in PLCSim Advanced requires either a valid SIMATIC OPC UA Server license or a time-limited trial license activated in PLCSim Advanced.
+  </Step>
+  <Step title="Configure the TIA Portal project">
+    Open your TIA Portal project, set the target PLC to a virtual S7-1500 compatible with PLCSim Advanced. Configure the OPC UA server in the PLC properties as you would for a real S7-1500. Expose the necessary DB variables, then download to the PLCSim Advanced instance (use **Download to device** — PLCSim Advanced appears as an available target in TIA Portal).
+  </Step>
+  <Step title="Connect from Visual Components">
+    Add an OPC UA server in the Connectivity panel with the PLCSim Advanced endpoint URL. If OPC UA is enabled correctly, the connection should succeed immediately since both applications are running on the same machine.
+  </Step>
+  <Step title="Pair variables and test">
+    Add variable pairs, start both the PLCSim Advanced program (set to RUN mode in the PLCSim Advanced Control Panel) and the Visual Components simulation. Verify that the PLC logic drives the simulation correctly.
+  </Step>
+</Steps>
+
+## Reference: PLCSim Advanced setup summary
+
+| Step | Location | Action |
+|---|---|---|
+| Create virtual instance | PLCSim Advanced Control Panel | New instance → assign name and IP |
+| Enable OPC UA server | PLCSim Advanced instance settings | Enable, note endpoint URL |
+| Configure OPC UA server | TIA Portal PLC properties | Enable OPC UA, expose DB variables |
+| Download program | TIA Portal | Download to PLCSim Advanced instance |
+| Set to RUN | PLCSim Advanced Control Panel | Click Run |
+| Add server | Visual Components Connectivity panel | Add OPC UA server with endpoint URL |
+| Pair variables | Visual Components Variable Pairs | Link simulation signals to PLC variables |
+
+## Troubleshooting
+
+<Accordion title="PLCSim Advanced not visible as download target in TIA Portal">
+  Ensure TIA Portal and PLCSim Advanced are the same generation (e.g., both V17 or both V18). Open PLCSim Advanced before starting TIA Portal. Check that the virtual controller instance is running (not just created).
+</Accordion>
+
+<Accordion title="OPC UA connection succeeds but no variables appear">
+  The PLC may not have any variables exposed via OPC UA. In TIA Portal, verify that at least one DB has OPC UA access enabled and that the configuration was downloaded to the PLC. Some DB types (e.g., system DBs) are never accessible via OPC UA.
+</Accordion>
+
+<Accordion title="Variable values don't update during simulation">
+  Check the OPC UA subscription interval in Visual Components server settings. Try lowering it to 50–100 ms. Also confirm the PLC program is actively writing to the exposed variables—an idle PLC may not publish values until they change.
+</Accordion>
+
+<Accordion title="Simulation runs at wrong speed compared to PLC">
+  Visual Components simulation time and PLC scan cycle time are independent. For realistic virtual commissioning, set the Visual Components simulation speed to **1.0× (real time)** in the simulation controls. Running the simulation faster than real time will cause timing mismatches with the PLC.
+</Accordion>

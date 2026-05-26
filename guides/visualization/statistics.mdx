@@ -1,0 +1,182 @@
+---
+title: "Analyze Simulation Results with Statistics Dashboard"
+description: "View throughput, cycle time, and utilization in the Visual Components Statistics dashboard, create custom chart layouts, and export data reports."
+---
+
+The Statistics dashboard collects performance data as your simulation runs and displays it in configurable charts and tables. You can monitor throughput, machine utilization, cycle times, and queue lengths in real time, then export the results for reporting. Because the dashboard is part of the layout file, your chart configuration is saved alongside the simulation and can be shared with colleagues.
+
+## Opening the Statistics dashboard
+
+Go to **Output** tab → **Statistics** to open the dashboard panel. The panel docks inside the Visual Components interface and can be resized or undocked as a floating window.
+
+If your layout includes components from the eCatalog that produce statistics (such as conveyors, machines, and robots with statistics behaviors), the dashboard automatically discovers those data sources when you first open it.
+
+## Viewing key metrics
+
+<Tabs>
+  <Tab title="Throughput">
+    Throughput charts show how many parts or products passed through a component or process node per unit time. The x-axis represents simulation time, and the y-axis shows count. You can display throughput as **cumulative** (total parts since simulation start) or **interval-based** (parts per defined time window).
+  </Tab>
+  <Tab title="Utilization">
+    Utilization measures what percentage of simulation time a component was in an active (working) state versus idle, blocked, or broken. This is expressed as a percentage and is available for machines, robots, and other process components.
+  </Tab>
+  <Tab title="Cycle time">
+    Cycle time tracks the time between consecutive part completions at a station. The dashboard can display average, minimum, and maximum cycle times over the simulation run.
+  </Tab>
+  <Tab title="Queue length">
+    Queue length tracks how many parts are waiting at an input buffer at any given simulation time. Peaks in queue length indicate bottlenecks.
+  </Tab>
+</Tabs>
+
+## Adding charts to the dashboard
+
+<Steps>
+  <Step title="Open the statistics panel">
+    Go to **Output** tab → **Statistics** to open the dashboard.
+  </Step>
+  <Step title="Add a chart">
+    Click **Add Chart** (the **+** button in the dashboard toolbar). A new empty chart appears in the layout.
+  </Step>
+  <Step title="Configure data series">
+    In the chart's **Properties** pane, click **Add Data Series**. Choose a component from the dropdown (for example, a conveyor or machine), then select the metric you want to track (throughput, utilization, cycle time, etc.).
+  </Step>
+  <Step title="Set the sampling interval">
+    The **Data Sampling Interval** controls how frequently the dashboard records a new data point. A shorter interval gives higher resolution but uses more memory during long simulations. A value of 10–60 seconds is typical for production simulations.
+  </Step>
+  <Step title="Choose cumulative or interval data">
+    Toggle between **Cumulative** and **Interval** mode in the chart properties. Interval mode is useful for spotting time-based trends, while cumulative mode shows overall totals.
+  </Step>
+  <Step title="Change the chart type">
+    Use the **Chart Type** selector to switch between line charts, bar charts, and pie charts. Pie charts work well for utilization breakdowns; line charts suit throughput over time.
+  </Step>
+</Steps>
+
+## Managing the dashboard layout
+
+### Adding tabs
+
+You can organize multiple charts across several tabs to keep the dashboard readable. Each tab can have its own grid layout.
+
+<Steps>
+  <Step title="Add a new tab">
+    In the dashboard panel, click the **+** icon next to the existing tab headers. A dialog prompts you to name the new tab.
+  </Step>
+  <Step title="Define the grid layout">
+    Each tab uses a grid to position charts. Set the number of rows and columns using the **Layout** settings in the tab properties. Charts snap to grid cells when you drag them.
+  </Step>
+  <Step title="Arrange charts across tabs">
+    Drag charts from one tab to another or resize them by dragging the chart borders. The layout saves with the `.vcmx` file automatically.
+  </Step>
+</Steps>
+
+### Using Python to create layouts programmatically
+
+For complex dashboards or when you need to generate the same chart structure across multiple layouts, you can use the Python API to create and configure tabs programmatically.
+
+```python
+from vcScript import *
+
+def OnStart():
+    app = getApplication()
+    stats = app.findBehaviour('StatisticsDashboard')
+    if not stats:
+        return
+
+    # Access or create a tab
+    tab = stats.createSection('Production KPIs')
+    tab.setLayout(2, 3)  # 2 rows, 3 columns
+
+    # Add a throughput chart in the first cell
+    chart = tab.addChart(0, 0)
+    chart.Title = 'Part Throughput'
+    chart.ChartType = 'Line'
+    series = chart.addSeries()
+    series.Component = app.findComponent('Conveyor_Exit')
+    series.Metric = 'Throughput'
+```
+
+<Note>
+The `StatisticsDashboard` behavior name may vary depending on your layout. Use `print(app.Behaviours)` in the script editor to list all available behaviors in your layout.
+</Note>
+
+## Statistics templates
+
+Statistics templates save a dashboard configuration—tabs, charts, data series, and layout—that you can reuse across different layouts. This is useful when you apply a standard reporting structure to every simulation you build.
+
+### Applying an existing template
+
+<Steps>
+  <Step title="Open the template manager">
+    Go to **Output** tab → **Statistics** → **Templates** (the template button in the dashboard toolbar).
+  </Step>
+  <Step title="Select a template">
+    Browse the list of available templates. Templates are stored in the Visual Components user folder at `%APPDATA%\Visual Components\Statistics Templates`. Select the template you want to apply.
+  </Step>
+  <Step title="Apply the template">
+    Click **Apply**. The dashboard reconfigures itself using the template's chart definitions, tab names, and layout. Data series are mapped to components in the current layout by name, so component names should match those expected by the template.
+  </Step>
+</Steps>
+
+### Creating a new template
+
+<Steps>
+  <Step title="Configure your dashboard">
+    Set up the tabs, charts, and data series exactly as you want them saved.
+  </Step>
+  <Step title="Save as template">
+    In the template manager, click **Save Current as Template**. Enter a name and optionally add an icon image to identify it in the template list.
+  </Step>
+  <Step title="Localize command names (optional)">
+    If you share templates across language locales, you can add localization strings for tab names and series labels. Place locale files in the template's subfolder using the standard Visual Components localization format.
+  </Step>
+</Steps>
+
+## Inspecting and exporting data
+
+### Inspecting data points
+
+While the simulation is running or after it stops, hover over any data point on a chart to see its exact value and the simulation timestamp. Click a point to pin the tooltip so you can compare values across charts.
+
+Toggle **Legend Visibility** in chart properties to show or hide the series legend within the chart area.
+
+### Exporting statistics data
+
+<Steps>
+  <Step title="Open the export dialog">
+    Right-click a chart in the dashboard and select **Export Data**, or use **Statistics** → **Export** in the Output tab.
+  </Step>
+  <Step title="Choose export format">
+    Select CSV to export raw data as a comma-separated file that opens in Excel or any spreadsheet application. Select PDF to export a snapshot of the current dashboard view.
+  </Step>
+  <Step title="Select data range">
+    Choose whether to export all data from simulation start to finish, or specify a time range.
+  </Step>
+  <Step title="Save the file">
+    Choose a save location and filename. The export runs immediately and opens the file if you enable the **Open after export** option.
+  </Step>
+</Steps>
+
+<Tip>
+If you need to compare statistics across multiple simulation runs, export CSV files from each run and combine them in Excel using the simulation run name as a column header. This makes it easy to compare throughput or utilization across different configurations.
+</Tip>
+
+## Reporting statistics to the Output panel
+
+In addition to the visual dashboard, you can write statistics values to the Output panel using Python. This is useful for automated testing or batch simulation runs where you need machine-readable output.
+
+```python
+from vcScript import *
+
+def OnStop():
+    app = getApplication()
+    conveyor = app.findComponent('MainConveyor')
+    if conveyor:
+        stats = conveyor.findBehaviour('Statistics')
+        if stats:
+            throughput = stats.getProperty('Throughput').Value
+            utilization = stats.getProperty('Utilization').Value
+            print(f'Throughput: {throughput:.1f} parts/hr')
+            print(f'Utilization: {utilization:.1f}%')
+```
+
+Output from this script appears in **View** → **Output** and can be redirected to a log file using the **Save Output** command.

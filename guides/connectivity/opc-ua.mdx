@@ -1,0 +1,174 @@
+---
+title: "Connect to an OPC UA Server from Visual Components"
+description: "Set up the Visual Components OPC UA client, discover server nodes, map simulation signals to OPC UA variables, and enable virtual commissioning."
+---
+
+OPC UA (Open Platform Communications Unified Architecture) is the industry-standard protocol for machine-to-machine communication in industrial automation. Visual Components 5.0 includes a built-in OPC UA client that lets you connect your simulation to any OPC UA-compatible server—whether that is a real PLC, a virtual PLC like Siemens PLCSim Advanced, or a custom OPC UA server running on a CoDeSys or Beckhoff TwinCAT system. This capability is the foundation of virtual commissioning: verifying PLC logic against a 3D simulation before the real equipment is installed.
+
+## Prerequisites
+
+Before you begin:
+
+- Visual Components 5.0 Premium or Professional (the Connectivity feature requires a Premium or Professional license)
+- An OPC UA server reachable over your network (or running locally on the same PC)
+- The server endpoint URL (e.g., `opc.tcp://192.168.1.50:4840`)
+- Simulation signals already defined on the components you want to connect
+
+<Note>
+  The OPC UA client in Visual Components does not require a separate OPC UA runtime license for the client itself. However, some OPC UA servers (e.g., Siemens PLCSim Advanced) require their own license on the server side.
+</Note>
+
+## Enabling the Connectivity tab
+
+The Connectivity panel is not visible by default in a new layout.
+
+<Steps>
+  <Step title="Open the Connectivity panel">
+    Go to **Connectivity** in the main ribbon. If you do not see the Connectivity tab, go to **View > Panels > Connectivity** to enable it.
+  </Step>
+  <Step title="Verify your license">
+    The Connectivity feature requires a Premium or Professional license. If the Connectivity tab is grayed out, check your license status in **Help > About**.
+  </Step>
+</Steps>
+
+## Adding an OPC UA server connection
+
+<Steps>
+  <Step title="Add a new server">
+    In the Connectivity panel, click **Add Server** and select **OPC UA** from the protocol list.
+  </Step>
+  <Step title="Enter the endpoint URL">
+    Type the server's endpoint URL in the **URL** field. The standard OPC UA port is 4840, but your server may use a different port:
+
+    ```
+    opc.tcp://localhost:4840
+    opc.tcp://192.168.1.50:4840
+    opc.tcp://plcsim-advanced:4840
+    ```
+  </Step>
+  <Step title="Configure security (optional)">
+    If your server requires authentication, expand the **Security** section and enter the username and password, or select a client certificate. For local development and testing, most servers accept anonymous connections.
+  </Step>
+  <Step title="Connect">
+    Click **Connect**. The status indicator turns green if the connection succeeds. If it shows red, check the endpoint URL, firewall settings, and that the server is running.
+  </Step>
+</Steps>
+
+<Warning>
+  If you are connecting to a server on a remote machine, ensure that port 4840 (or your server's configured port) is open in the Windows Firewall on both the server and client machines.
+</Warning>
+
+## Browsing the server node tree
+
+Once connected, Visual Components downloads the OPC UA address space from the server and displays it as a node tree in the Connectivity panel.
+
+- Expand nodes by clicking the arrow to the left of each node name
+- Nodes with a **value** icon (cylinder shape) are variables you can pair with simulation signals
+- Variables appear with their data type (Bool, Int16, Real, String, etc.)
+
+<Tip>
+  Use the search bar at the top of the node tree to filter by node name. If you know the variable names from your PLC program (e.g., `ConveyorRun`, `SensorTriggered`), you can type them directly instead of navigating the full tree.
+</Tip>
+
+## Making components PLC-ready
+
+Before you can pair simulation signals with OPC UA variables, your components need to expose the right signals. A "PLC-ready" component has boolean or real signals that correspond to the I/O addresses in your PLC program.
+
+<Steps>
+  <Step title="Identify the required I/Os">
+    Look at the PLC program to identify the output signals (PLC outputs → simulation inputs) and input signals (simulation outputs → PLC inputs). For a conveyor, this typically includes:
+
+    - `PLC_Out.ConveyorRun` → simulation `ConveyorEnable` (Boolean)
+    - `Simulation_Out.SensorEnd` → PLC `In.Sensor1` (Boolean)
+  </Step>
+  <Step title="Add signal behaviors to the component">
+    Open the component for editing. Right-click the root node in the Component Graph and add **Boolean Signal** behaviors for each required I/O. Name them to match your PLC variable naming convention.
+  </Step>
+  <Step title="Wire signals to component logic">
+    In the component's Python script, read input signals to control behavior (e.g., start/stop the conveyor) and write output signals when events occur (e.g., a part reaches the sensor):
+
+    ```python
+    def OnSignal(signal):
+        if signal.Name == "ConveyorEnable":
+            path = getComponent().findBehavior("ConveyorPath")
+            path.Running = signal.Value
+    ```
+  </Step>
+</Steps>
+
+## Pairing simulation signals with OPC UA variables
+
+Variable pairing is the process of linking a simulation signal to an OPC UA node so they stay in sync during simulation.
+
+<Steps>
+  <Step title="Open the Variable Pairs view">
+    In the Connectivity panel, select the connected server and click **Variable Pairs** (or the link icon).
+  </Step>
+  <Step title="Add a simulation-to-server pair">
+    Click **Add Pair**. On the left side, click the simulation signal (e.g., `SensorEnd`). On the right side, navigate to the corresponding OPC UA node in the server tree and select it.
+
+    Set the **Direction**:
+    - **Simulation → Server**: simulation writes, PLC reads (sensor outputs, status signals)
+    - **Server → Simulation**: PLC writes, simulation reads (command signals, setpoints)
+  </Step>
+  <Step title="Set the data type mapping">
+    If the simulation signal type (Boolean) matches the OPC UA node type (Boolean), no conversion is needed. If you need to map a Boolean to an integer bit position, use the **Formula** field to write an expression (e.g., `INT(value * 1)`).
+  </Step>
+  <Step title="Repeat for all signals">
+    Add a pair for each signal. For a typical conveyor virtual commissioning setup, you might have 4–8 pairs (run command, speed setpoint, two or three sensor outputs, fault signal, ready signal).
+  </Step>
+</Steps>
+
+## Running the simulation with PLC
+
+<Steps>
+  <Step title="Start the PLC program">
+    In your PLC engineering environment (TIA Portal, Codesys, TwinCAT), download the program to the virtual or real controller and set it to Run mode.
+  </Step>
+  <Step title="Verify variable values">
+    In the Visual Components Connectivity panel, check that the paired OPC UA variables are showing values. Hover over a pair to see the current value from the server.
+  </Step>
+  <Step title="Start the simulation">
+    Press Play in Visual Components. The simulation and PLC now run simultaneously. PLC outputs drive simulation components; simulation sensor signals feed back to the PLC inputs.
+  </Step>
+  <Step title="Monitor and debug">
+    Watch the signal values in real time in the Connectivity panel. If a pair is not updating, check that the OPC UA server is publishing changes (some servers require subscription settings to be configured).
+  </Step>
+</Steps>
+
+## Connecting Siemens PLCSim Advanced over OPC UA
+
+PLCSim Advanced is Siemens' software-based PLC simulator that supports the full S7-1500 instruction set and exposes an OPC UA server interface. This makes it ideal for virtual commissioning without physical hardware.
+
+<Steps>
+  <Step title="Set up PLCSim Advanced">
+    Install and launch Siemens PLCSim Advanced (version 3.0 or later recommended). Create a new virtual PLC instance. In the PLCSim Advanced instance settings, enable the OPC UA server and note the endpoint URL (typically `opc.tcp://localhost:4840`).
+  </Step>
+  <Step title="Configure TIA Portal for OPC UA">
+    In your TIA Portal project, open the PLC properties and navigate to **OPC UA > Server**. Enable the OPC UA server and configure which DB variables are accessible. Download the program to the PLCSim Advanced instance.
+  </Step>
+  <Step title="Note on the OPC UA runtime license">
+    Siemens OPC UA server functionality in PLCSim Advanced requires an S7-1500 OPC UA runtime license. During development, you can use a trial period, but production use requires a valid license on the real PLC. For pure simulation (PLCSim Advanced with no real hardware), check Siemens' licensing terms for your specific version.
+  </Step>
+  <Step title="Connect from Visual Components">
+    In the Visual Components Connectivity panel, add an OPC UA server with the PLCSim Advanced endpoint URL and follow the pairing steps above.
+  </Step>
+</Steps>
+
+<Note>
+  When connecting to PLCSim Advanced, the simulation clock and PLC scan cycle run independently. Visual Components does not synchronize simulation time with the PLC scan cycle. For timing-sensitive applications, test with the simulation speed set to 1:1 (real time).
+</Note>
+
+## Troubleshooting connection issues
+
+<Accordion title="Connection fails immediately">
+  Check that the endpoint URL is correct and the server is running. Try pinging the server IP address from the Visual Components machine. Verify that the firewall is not blocking port 4840. Some OPC UA servers require the client to trust its certificate—check the server's security log for rejected connection attempts.
+</Accordion>
+
+<Accordion title="Variables show no data after pairing">
+  Ensure the OPC UA variable is being published by the server. In some server configurations, variables only publish when they change value. Try forcing a change in the PLC program and observe whether the paired value updates. Check the **Subscription interval** in the server settings—lower values (e.g., 100 ms) provide more frequent updates.
+</Accordion>
+
+<Accordion title="Simulation runs but signals don't affect components">
+  The signal pairing is correct at the connectivity layer, but the component's Python script may not be reacting to the signal correctly. Add a `print(signal.Name, signal.Value)` statement in the `OnSignal` handler to confirm the signal is being received.
+</Accordion>

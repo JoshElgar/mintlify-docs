@@ -1,0 +1,162 @@
+---
+title: 'Connect Components with Transport Links'
+description: 'Understand how transport links work in Process Modeling, how to add and remove them, and how to use transport filters and link tools to control product routing.'
+---
+
+Transport links are the directional connections between PM components that allow products to travel from one process to another. Without a transport link, no product can move between two components — even if they are physically adjacent in the 3D scene. Every path a product can take through the layout must be represented by at least one transport link. Getting transport links right is critical before you run the simulation for the first time.
+
+## How transport links work
+
+A transport link is a one-way connection from a source component to a destination component. When a process executor issues a **Transport Out** statement, the simulation checks the available outgoing links from that component and selects one that satisfies the routing conditions. The product then travels along that link to the destination process.
+
+Links are visible in the scene as colored arrows when the **Process** tab is active. The color indicates the link status:
+
+| Color | Meaning |
+| --- | --- |
+| Green | Link is active and products can use it |
+| Grey | Link exists but no product type filter matches the current flow |
+| Red | Link configuration has an error |
+
+## Adding transport links
+
+You can add links in several ways depending on whether you are connecting one component or many at once.
+
+### Manual drag method
+
+<Steps>
+  <Step title="Select the Process tab">
+    Click the **Process** tab in the ribbon to activate the transport link tools.
+  </Step>
+  <Step title="Hover over the source component">
+    Move your cursor over the component you want to send products *from*. A connection handle appears on the boundary of the component.
+  </Step>
+  <Step title="Drag to the destination">
+    Click and drag from the handle to the destination component. Release the mouse button over the target. The link appears as a green arrow between the two components.
+  </Step>
+</Steps>
+
+### Auto Link tool
+
+The **Auto Link** tool in the Process ribbon creates links automatically based on the flow group definitions. It connects each process step to the next step in the flow sequence.
+
+<Steps>
+  <Step title="Open the Process tab">
+    Click the **Process** tab in the ribbon.
+  </Step>
+  <Step title="Click Auto Link">
+    Click the **Auto Link** button. The tool analyzes all defined flow groups and draws the minimum set of transport links required to connect each step to the next.
+  </Step>
+  <Step title="Review and adjust">
+    Inspect the generated links. The Auto Link tool creates one-to-one connections between consecutive steps. If you need many-to-one or one-to-many topologies, add or remove links manually.
+  </Step>
+</Steps>
+
+<Note>
+Auto Link does not create links for flow steps that involve resources (mobile robots, humans). Those links are handled by the resource controller.
+</Note>
+
+### Link topology patterns
+
+Process Modeling supports several link topologies between processes.
+
+<Tabs>
+  <Tab title="One-to-one">
+    A single source connects to a single destination. This is the simplest topology and works for linear production lines with no branching.
+
+    Use this when each process step feeds exactly one downstream process.
+  </Tab>
+  <Tab title="One-to-many">
+    A single source connects to multiple destinations. The simulation selects the destination based on the flow definition and any transport filters applied to the Transport Out statement.
+
+    Use this when a single station must route different product types to different downstream processes.
+  </Tab>
+  <Tab title="Many-to-one">
+    Multiple sources connect to a single destination. The destination accepts products from any connected upstream process.
+
+    Use this when multiple lines merge before entering a shared station or buffer.
+  </Tab>
+  <Tab title="Many-to-many">
+    Multiple sources each connect to multiple destinations. This is the most flexible topology but requires careful filter configuration to avoid routing conflicts.
+
+    Use this when the layout has a shared pool of stations that any upstream process can feed.
+  </Tab>
+</Tabs>
+
+## Removing transport links
+
+The **Clear Links** tool in the Process ribbon removes links in bulk. You can choose to clear:
+
+- **All** — removes every transport link in the layout.
+- **Unused** — removes links that are not referenced by any flow group.
+- **Empty** — removes links that have no transport filter assigned and are therefore redundant when filtered links already exist.
+
+To remove a single link, click it in the scene to select it and press **Delete**.
+
+## Transport filters
+
+By default, a transport link accepts products of any type. Transport filters let you restrict a link to specific product types, property values, or expressions, so the simulation routes each product only along links that match its characteristics.
+
+### Filter types
+
+<AccordionGroup>
+  <Accordion title="Product type filter">
+    Restricts the link to products of a specific named type. Add this filter when a link should only carry one particular part variant through the layout.
+
+    **Example:** A link from a feeder to a machining station filtered to `CylinderPart` only — `BoxPart` products are not routed along this link.
+  </Accordion>
+  <Accordion title="Product property filter">
+    Restricts the link based on the value of a custom property on the product instance. The condition can be an equality check, comparison, or range.
+
+    **Example:** Route only products where `Priority == 1` along an express line and all others along the standard line.
+  </Accordion>
+  <Accordion title="Expression filter">
+    Uses a Boolean expression evaluated at runtime to decide whether a product can use the link. Expressions can reference any product property or simulation variable.
+
+    **Example:** `product.BatchSize > 10` to route large batches along a different path.
+  </Accordion>
+  <Accordion title="Specific product filter">
+    Locks the link to a single specific product instance rather than a type. Use this in advanced scenarios where a process reserves a particular physical item for downstream operations.
+  </Accordion>
+</AccordionGroup>
+
+### Adding a filter to a link
+
+<Steps>
+  <Step title="Select the link">
+    Click the transport link arrow in the scene to select it. The properties panel shows the link's configuration.
+  </Step>
+  <Step title="Open the filter settings">
+    In the properties panel, click **Add Filter** under the Transport Filters section.
+  </Step>
+  <Step title="Choose the filter type">
+    Select **Product Type**, **Product Property**, **Expression**, or **Specific Product** from the drop-down.
+  </Step>
+  <Step title="Configure the condition">
+    Enter the product type name, property name and value, or expression string depending on the filter type you chose.
+  </Step>
+  <Step title="Combine filters if needed">
+    Add multiple filters to the same link. The link accepts a product only if all filters on the link evaluate to true (AND logic). To model OR logic, create separate parallel links, each with its own filter.
+  </Step>
+</Steps>
+
+<Warning>
+If no transport link from a component matches the current product, the product is blocked at that process indefinitely. The simulation does not raise an error automatically — watch for products that stop moving during a test run.
+</Warning>
+
+## Set Controller tool
+
+The **Set Controller** tool assigns a resource controller (such as a mobile robot controller) to a transport link. When a link is assigned to a controller, the resource assigned to that controller carries products along the link instead of the product moving autonomously along a conveyor path.
+
+Use Set Controller when a human or mobile robot should pick up a product from one station and deliver it to another.
+
+<Steps>
+  <Step title="Click Set Controller in the Process ribbon">
+    The cursor changes to a controller assignment mode.
+  </Step>
+  <Step title="Click the transport link">
+    Select the link you want to assign.
+  </Step>
+  <Step title="Click the resource controller">
+    Click the PM Resource Controller component in the scene. The link is now associated with that controller and the resource will service it during the simulation.
+  </Step>
+</Steps>

@@ -1,0 +1,123 @@
+---
+title: "Build .NET Add-on Plugins for Visual Components"
+description: "Create custom ribbon commands, panel plugins, and application event handlers for Visual Components using the .NET SDK and C# or VB.NET."
+---
+
+Visual Components supports custom add-on plugins built with the .NET SDK. Add-ons can add ribbon commands, create dockable panels, subscribe to application events, and interact with the full simulation model — going beyond what component-level Python scripts can do. Add-ons are distributed as `.vcax` packages and installed by users from the eCatalog or a local folder.
+
+## What you can build
+
+- **Ribbon commands** — add buttons to the Visual Components ribbon toolbar that run custom logic
+- **Panel plugins** — create dockable panels (like the eCatalog or Properties panel) with custom WPF UI
+- **Background plugins** — run code silently without a visible UI panel
+- **Scene Graph panel** — a specialized panel that displays the component hierarchy
+- **Event subscribers** — respond to application-level events (layout opened, component added, simulation started)
+
+## Prerequisites
+
+- Visual Studio 2019 or later
+- .NET Framework 4.7.2 (matching the Visual Components target framework)
+- Visual Components SDK (available from the Visual Components developer resources)
+- Basic familiarity with C# and WPF
+
+## Register a custom command
+
+A command adds a button to the ribbon. Implement the `ICommand` interface from the Visual Components SDK:
+
+```csharp
+using VisualComponents.Create3D;
+using VisualComponents.UX.Shared;
+
+public class MyCommand : ICommand
+{
+    private IApplication _app;
+
+    public MyCommand(IApplication app)
+    {
+        _app = app;
+    }
+
+    public string Name => "MyCustomCommand";
+    public string Header => "Run My Tool";
+    public string Category => "My Add-on";
+
+    public void Execute()
+    {
+        var selected = _app.World.SelectedComponents;
+        foreach (var comp in selected)
+        {
+            _app.PrintMessage($"Selected: {comp.Name}");
+        }
+    }
+}
+```
+
+Register the command in your plugin's entry point:
+
+```csharp
+public class MyPlugin : IPlugin
+{
+    public void Initialize(IApplication app)
+    {
+        app.AddCommand(new MyCommand(app));
+    }
+}
+```
+
+## Add a panel plugin
+
+Panel plugins create dockable windows inside Visual Components. Implement `IPanelPlugin` and provide a WPF `UserControl` as the panel content:
+
+```csharp
+using VisualComponents.Create3D;
+
+public class MyPanel : IPanelPlugin
+{
+    public string Name => "My Panel";
+    public System.Windows.UIElement Content => new MyPanelView();
+
+    public void Initialize(IApplication app)
+    {
+        // Initialization logic
+    }
+}
+```
+
+## Subscribe to application events
+
+Use the application context to respond to events like layout changes or component selection:
+
+```csharp
+public void Initialize(IApplication app)
+{
+    app.World.ComponentAdded   += OnComponentAdded;
+    app.World.ComponentRemoved += OnComponentRemoved;
+    app.Simulation.SimulationStarted += OnSimulationStarted;
+}
+
+private void OnComponentAdded(object sender, ComponentEventArgs e)
+{
+    // React to new components being added to the layout
+}
+```
+
+## Package and distribute your add-on
+
+<Steps>
+  <Step title="Build the project">
+    Build your Visual Studio project in Release mode to produce the plugin DLL.
+  </Step>
+  <Step title="Create the .vcax package">
+    Use the Visual Components Add-on Packager tool (provided in the SDK) to bundle your DLL, any dependencies, and a manifest file into a `.vcax` package.
+  </Step>
+  <Step title="Test installation">
+    In Visual Components, add a local folder as an eCatalog source and navigate to your `.vcax` file. Double-click to install. Restart Visual Components and verify your command or panel appears.
+  </Step>
+  <Step title="Distribute">
+    Share the `.vcax` file with users. They install it the same way — by adding the folder as a local eCatalog source or using the Add-on Manager.
+  </Step>
+</Steps>
+
+<Tip>
+  During development, you can load add-ons directly from your build output folder without packaging. Add the folder containing your DLL as a local eCatalog source and point it at the Debug/Release build output.
+</Tip>

@@ -1,0 +1,75 @@
+---
+title: "Deactivate Your Visual Components License"
+description: "How to deactivate a Visual Components standalone license before moving it to a new machine, including online and offline manual deactivation steps."
+---
+
+Before you can activate your standalone license on a new machine, you must deactivate it from the current one. Deactivation releases the license seat back to your account and makes the product key available for use on another computer. Skipping this step means the key remains tied to the old machine — leaving you unable to activate on a new one unless you request a remote deactivation through the license portal.
+
+<Warning>
+  Deactivate your license **before** formatting, replacing, or retiring the machine it is installed on. If you lose access to the machine without deactivating first, you must contact Visual Components support or use the license portal to perform a remote deactivation, which counts as a transfer and may be subject to limitations.
+</Warning>
+
+## Online deactivation
+
+Online deactivation is the fastest and most straightforward method. It requires an internet connection on the machine where the license is currently active.
+
+<Steps>
+  <Step title="Open licensing options">
+    Launch Visual Components on the machine where the license is active. Go to **Home → Options → Licensing** in the ribbon toolbar. Your current license details appear, including edition, seat type, and expiry date.
+  </Step>
+  <Step title="Start the deactivation wizard">
+    Click **Deactivate License**. The deactivation wizard opens and shows the license information for confirmation.
+  </Step>
+  <Step title="Confirm deactivation">
+    Review the details and click **Deactivate**. The wizard contacts the Visual Components license server, releases the license from this machine, and confirms the deactivation. Visual Components closes automatically after deactivation.
+  </Step>
+</Steps>
+
+After successful online deactivation, the product key is immediately available for activation on another machine.
+
+## Offline (manual) deactivation
+
+If the machine does not have internet access, you can deactivate the license manually using file exchange with the license portal.
+
+<Steps>
+  <Step title="Open the deactivation wizard">
+    In Visual Components, go to **Home → Options → Licensing** and click **Deactivate License**. In the wizard, choose **Manual deactivation (offline)**.
+  </Step>
+  <Step title="Generate the deactivation request file">
+    The wizard creates a **deactivation request file** (`.req`) and saves it to your chosen location. Copy this file to a USB drive.
+  </Step>
+  <Step title="Upload the deactivation request to the license portal">
+    On an internet-connected machine, sign in to [license.visualcomponents.net](https://license.visualcomponents.net). Navigate to **Manual Deactivation**, upload the `.req` file, and the portal generates a **deactivation permission file** (`.per`).
+  </Step>
+  <Step title="Download the deactivation permission file">
+    Download the `.per` file from the portal and copy it to the USB drive.
+  </Step>
+  <Step title="Apply the permission file on the offline machine">
+    Transfer the `.per` file back to the machine being deactivated. In the deactivation wizard (still open), click **Browse**, select the `.per` file, and click **Deactivate**. The wizard removes the license from this machine and generates a **deactivation confirmation file** (`.con`).
+  </Step>
+  <Step title="Upload the confirmation to the license portal">
+    Copy the `.con` file to the USB drive, take it to the internet-connected machine, and upload it to the license portal under **Confirm Deactivation**. This step completes the deactivation record and makes the product key fully available for reuse.
+  </Step>
+</Steps>
+
+## Verifying deactivation
+
+After deactivation, sign in to [license.visualcomponents.net](https://license.visualcomponents.net) and view your licenses. The deactivated machine should no longer appear under the active activations for that product key. The key's status returns to **Available**.
+
+## Transfer limitations
+
+Standalone licenses have a limit on how many times they can be transferred between machines in a given period. This limit exists to prevent license abuse. If you reach the transfer limit, contact your Visual Components reseller or the support team to request an exception.
+
+<Note>
+  Virtual machines use dynamic hardware identifiers, which can cause standalone license activations to appear as transfers each time the VM is restarted or cloned. If you run Visual Components in a virtualized environment, discuss network floating license options with your reseller to avoid transfer limit issues.
+</Note>
+
+## Remote deactivation via the license portal
+
+If you can no longer access the machine where a license is activated (for example, because it was lost, stolen, or destroyed), you can request a remote deactivation from the license portal:
+
+1. Sign in to [license.visualcomponents.net](https://license.visualcomponents.net).
+2. Find the product key in your license list and click **Deactivate remotely**.
+3. Confirm the deactivation. The license is released from the machine record on the server side.
+
+Remote deactivation may count against your transfer limit. If the original machine is later recovered, it will no longer have a valid license and will need to be reactivated.

@@ -1,0 +1,207 @@
+---
+title: "Robot Offline Programming (OLP) with Visual Components"
+description: "Import CAD geometry, define process points, generate collision-free paths with Path Solver, and export programs to KUKA, ABB, and other formats."
+---
+
+Robot Offline Programming (OLP) in Visual Components 5.0 lets you create, validate, and export complete robot programs without stopping production or occupying real robot time. You import your workpiece CAD model, define the process (welding seams, cutting paths, surface treatment areas), generate robot motions automatically, solve for collisions and joint limits, and export a vendor-specific program that runs on the real controller with minimal touch-up.
+
+OLP is available in **Premium OLP**, **Professional OLP**, and **Robotics OLP** product editions. The supported processes include:
+
+<CardGroup cols={3}>
+  <Card title="Arc welding" icon="fire-flame-curved">
+    MIG, TIG, and laser welding with weld schedule parameters and seam tracking
+  </Card>
+  <Card title="Spot welding" icon="bolt">
+    Robotic spot welding with gun approach, weld, and retract sequences
+  </Card>
+  <Card title="Cutting and deburring" icon="scissors">
+    Edge following for plasma, laser, or waterjet cutting and deburring operations
+  </Card>
+  <Card title="Grinding and polishing" icon="circle-notch">
+    Surface treatment paths with force control parameters
+  </Card>
+  <Card title="Painting and coating" icon="paint-roller">
+    Wet painting, thermal spraying, and cold spray coverage paths
+  </Card>
+  <Card title="Sealing and dispensing" icon="droplet">
+    Bead application along edges and curves with speed and flow control
+  </Card>
+</CardGroup>
+
+## Basic OLP workflow
+
+The OLP process follows four repeatable steps regardless of the application type.
+
+<Steps>
+  <Step title="Create the weld (or process) path">
+    Select edges, curves, or surfaces on the imported CAD workpiece to define where the robot needs to work. Visual Components generates motion points along the selected geometry at the correct approach angle for the process.
+  </Step>
+  <Step title="Generate search paths">
+    For applications with positioners, generate **search paths** that validate the workpiece orientation at key positions. The PA/B mode for positioners lets you pre-define how the positioner rotates the part during the process.
+  </Step>
+  <Step title="Validate and solve the path">
+    Use the **Check Path** function and the automatic solvers to detect and resolve collisions, joint limit violations, and singularity. The Path Solver and Via Solver adjust robot configurations and insert via points to produce a collision-free path.
+  </Step>
+  <Step title="Post-process and export">
+    Run the **Post-Processor** for your target robot brand. Visual Components generates the vendor-specific program files, ready to be transferred to the real controller.
+  </Step>
+</Steps>
+
+## Importing CAD geometry
+
+OLP paths are defined on real workpiece geometry rather than on abstract motion points. Import your CAD model into the layout before defining any paths.
+
+<Steps>
+  <Step title="Import the CAD file">
+    On the **Home** tab, click **Import** and browse to your CAD file. Visual Components supports common formats including STEP, IGES, STL, OBJ, and native formats from major CAD systems.
+  </Step>
+  <Step title="Position the workpiece">
+    Place the imported part where it will be held in the real workcell — on a fixture, positioner, or table. If the part sits on a positioner that is connected as an external axis, attach the part to the positioner so its motion is coordinated with the robot.
+  </Step>
+  <Step title="Create collision geometry (optional but recommended)">
+    Simplified collision geometry makes reachability checking faster. Select the part and use **Create Collision Geometry** to generate a low-polygon representation. This does not affect the visual quality of the part but significantly speeds up the solver.
+  </Step>
+</Steps>
+
+## Defining process points
+
+Process points are the target positions the robot's tool must reach. In OLP, you define them by selecting geometry on the CAD workpiece rather than jogging the robot manually.
+
+<Steps>
+  <Step title="Select the OLP Path tool">
+    In the **Program** tab, add a new **Path** statement and switch to **OLP mode** by clicking the **OLP** button in the teaching overlay.
+  </Step>
+  <Step title="Click edges or surfaces on the workpiece">
+    Click on an edge (for welding seams or cut paths) or a surface (for painting or grinding). Visual Components places motion points along the selected geometry, oriented to the surface normal.
+
+    Hold **Shift** to select multiple edges and build a continuous path. Use the **Curve Offset** setting to lift the TCP above the surface by a fixed distance.
+  </Step>
+  <Step title="Set process parameters">
+    For welding, configure the torch angle, tilt, and lead/lag angles. For painting, set the standoff distance and path overlap. These parameters are stored with each motion point.
+  </Step>
+  <Step title="Reverse path direction if needed">
+    Right-click the path and select **Reverse Path** to swap the start and end points. The robot will travel in the opposite direction.
+  </Step>
+</Steps>
+
+## Using Path Solver
+
+The **Path Solver** automatically resolves problems in the robot path — collisions, joint limits, and configuration flips — by adjusting robot configurations at each point and inserting via points where needed.
+
+<Steps>
+  <Step title="Check the path first">
+    Before running the solver, click **Check Path** to get a report of all problematic points. Points are color-coded: green (reachable), yellow (warning), red (unreachable or collision).
+  </Step>
+  <Step title="Run Path Solver">
+    Click **Path Solver** in the OLP toolbar. Choose the solver mode:
+    - **Auto** — the solver tries to fix all problems automatically
+    - **Manual** — you step through each problematic point and choose the configuration
+  </Step>
+  <Step title="Review the results">
+    After the solver runs, check the path again. Any remaining red points require manual intervention — you may need to reposition the robot, adjust the workpiece fixture, or modify the approach angle.
+  </Step>
+  <Step title="Use Via Solver for collision avoidance">
+    For transitions between process paths where the robot passes near obstacles, use the **Via Solver**. It generates intermediate via points that route the robot around obstacles between the end of one path and the start of the next.
+  </Step>
+</Steps>
+
+<Warning>
+The Path Solver adjusts robot configurations within joint limits but does not reposition the robot base or positioner. If many points remain red after solving, check whether the robot is positioned optimally relative to the workpiece before relying on the solver.
+</Warning>
+
+## Positioner setup for welding
+
+For robotic welding with a turntable or headstock/tailstock positioner, you configure the positioner as an external axis connected to the robot controller.
+
+<Steps>
+  <Step title="Connect the positioner as an external axis">
+    Select the robot, open **Interfaces**, and link the positioner. The positioner axes now appear in the robot's joint value display.
+  </Step>
+  <Step title="Set PA/B mode">
+    In the OLP path properties, set the **Positioner Mode** to **PA** (positioner controls the part orientation for the process) or **PB** (robot controls orientation). PA/B mode defines how the robot and positioner cooperate to keep the weld seam in the optimal position (flat or horizontal).
+  </Step>
+  <Step title="Generate search paths">
+    Use the **Create Search** function to generate approach paths that position the part correctly before the welding path starts. Searches account for the positioner angle and ensure the robot reaches the seam start in the correct configuration.
+  </Step>
+</Steps>
+
+## Welding workflow (arc welding)
+
+Arc welding (MIG, TIG) follows the four-step OLP workflow with additional weld-specific parameters.
+
+<Steps>
+  <Step title="Import the weldment and set up the cell">
+    Import the CAD assembly, add the robot and welding torch from the eCatalog, mount the torch on the robot, and connect the positioner as an external axis.
+  </Step>
+  <Step title="Create the weld path">
+    Select the joint edges on the CAD model to define the weld seam. Set the torch angle (typically 45° for a fillet weld), lead angle, and standoff distance in the path properties.
+  </Step>
+  <Step title="Configure weld parameters">
+    For each weld section in the path, set the weld schedule: wire feed speed, voltage, travel speed, and gas flow. These values are exported with the program.
+  </Step>
+  <Step title="Validate and post-process">
+    Run Check Path and Path Solver. When all points are green, select the post-processor for your robot (KUKA KRL, ABB RAPID, Motoman JBI, etc.) and export the program.
+  </Step>
+</Steps>
+
+<Tip>
+For complex weldments with many seams, use the **WPS Rule Manager** to define welding procedure specifications (WPS) as reusable rule sets. Apply a WPS rule to a seam and all parameters are set automatically according to the specification.
+</Tip>
+
+## Spot welding workflow
+
+Spot welding programs typically consist of approach, weld, and retract sequences at each weld point.
+
+<Steps>
+  <Step title="Define spot weld targets">
+    Select surface points on the flanges where spot welds are required. Visual Components creates a motion point at each location, oriented to the surface normal.
+  </Step>
+  <Step title="Set gun approach and retract">
+    Configure the gun open/close distance and the approach offset so the gun approaches perpendicular to the surface from outside the part.
+  </Step>
+  <Step title="Add weld actions">
+    At each weld point, add a **Set Signal** statement to trigger the weld gun (or configure an integrated weld action in the path properties). Add a **Delay** to model the weld dwell time.
+  </Step>
+</Steps>
+
+## Exporting to vendor-specific formats
+
+Post-processors convert the simulation program into code that runs on a specific robot controller. Visual Components includes post-processors for all major robot brands.
+
+<Steps>
+  <Step title="Select the post-processor">
+    Go to **Robot > Export Program** and select the post-processor that matches your robot controller (for example, KUKA KRL for KUKA robots, ABB RAPID for ABB, Stäubli VAL3 for Stäubli, Fanuc TP for FANUC).
+  </Step>
+  <Step title="Configure export options">
+    Set options such as which routines to export, whether to include comments, and the unit system (metric or imperial). Some post-processors offer brand-specific options like frame numbering conventions.
+  </Step>
+  <Step title="Export the files">
+    Click **Export**. Visual Components generates one or more program files in the target language. Transfer these files to the robot controller using a USB drive, network share, or the robot manufacturer's transfer software.
+  </Step>
+</Steps>
+
+## Re-importing a modified program
+
+After the program runs on the real robot, operators often make small adjustments at the controller. You can re-import the modified program to keep the simulation in sync with the real cell.
+
+<Steps>
+  <Step title="Import the updated program">
+    Go to **Robot > Import Program** and browse to the updated file. Choose the post-processor format that matches the file type.
+  </Step>
+  <Step title="Review changes">
+    Visual Components updates the motion points in the program tree. Check that tool frame and base frame assignments still match the simulation setup.
+  </Step>
+  <Step title="Modify the tool frame if needed">
+    If the real robot used a different TCP definition (for example, after a tool calibration on the shop floor), update the **Define Tool** statement in the program to match the new TCP values.
+  </Step>
+</Steps>
+
+<Note>
+Program import is supported for KUKA KRL, ABB RAPID, and several other formats. The supported formats depend on which post-processors are installed with your Visual Components license.
+</Note>
+
+## Next steps
+
+- [Check and optimize robot reachability](/guides/robot-simulation/reachability) — ensure all OLP path points are reachable before exporting
+- [Configure robot I/O signals](/guides/robot-simulation/signals) — add weld trigger signals and sensor interlocks to the exported program
+- [Teach robot positions interactively](/guides/robot-simulation/robot-teaching) — combine OLP paths with manually taught approach and retract moves

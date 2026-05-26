@@ -1,0 +1,82 @@
+---
+title: "Activate Your Visual Components License"
+description: "Activate a Visual Components standalone license online or offline, including manual activation for machines without internet access."
+---
+
+When you launch Visual Components for the first time, or after purchasing a new license, the license activation wizard guides you through binding your product key to your machine. For most users on internet-connected machines, activation completes in under a minute. If your machine does not have internet access, you can perform a manual offline activation using the Visual Components license portal.
+
+<Note>
+  These steps apply to standalone (node-locked) licenses. If your organization uses network floating licenses, your IT administrator configures the license server and you connect to it automatically at launch — no manual activation is required on your part.
+</Note>
+
+## Online activation
+
+Online activation is the fastest method and works on any machine with internet access.
+
+<Steps>
+  <Step title="Launch Visual Components">
+    Open Visual Components from the Start menu or desktop shortcut. If no license is active, the license activation wizard opens automatically. If the wizard does not open, go to **Home → Options → Licensing** and click **Activate License**.
+  </Step>
+  <Step title="Enter your product key">
+    In the activation wizard, select **Activate with product key** and type or paste your product key. Product keys are in the format `XXXXX-XXXXX-XXXXX-XXXXX-XXXXX`. Click **Next**.
+  </Step>
+  <Step title="Complete online activation">
+    The wizard contacts the Visual Components license server, validates your key, and registers your machine. When activation succeeds, you see a confirmation screen showing the license edition and expiry date. Click **Finish** to start using Visual Components.
+  </Step>
+</Steps>
+
+## Offline (manual) activation
+
+If your machine does not have internet access — for example, in a secure manufacturing environment — you can activate the license manually by transferring activation request and license files between the offline machine and an internet-connected machine.
+
+<Steps>
+  <Step title="Open the activation wizard on the offline machine">
+    Launch Visual Components on the machine you want to activate. When the activation wizard appears, select **Activate with product key**, enter your product key, and click **Next**.
+  </Step>
+  <Step title="Choose manual activation">
+    On the activation method screen, select **Manual activation (offline)**. The wizard generates an **activation request file** (`.req`) and saves it to a location you choose on the offline machine. Note the file path.
+  </Step>
+  <Step title="Transfer the request file to an internet-connected machine">
+    Copy the `.req` file to a USB drive or any portable storage and take it to a machine that has internet access.
+  </Step>
+  <Step title="Upload the request file to the license portal">
+    On the internet-connected machine, go to [license.visualcomponents.net](https://license.visualcomponents.net) and sign in. Navigate to **Manual Activation**, click **Upload Activation Request**, and select the `.req` file. The portal processes the request and generates a **license file** (`.lic`).
+  </Step>
+  <Step title="Download the license file">
+    Download the generated `.lic` file from the portal and copy it to the USB drive.
+  </Step>
+  <Step title="Apply the license file on the offline machine">
+    Transfer the `.lic` file back to the offline machine. In the activation wizard (which should still be open), click **Browse** and select the `.lic` file. The wizard applies the license and confirms successful activation.
+  </Step>
+</Steps>
+
+<Warning>
+  A standalone license can only be active on one machine at a time. If you activate a product key that is already active on another machine, the activation will fail. Deactivate the license on the old machine first. See [Deactivate Your Visual Components License](/getting-started/license-deactivation).
+</Warning>
+
+## Upgrading an evaluation license
+
+If you are currently running an evaluation (trial) license and have purchased a full license, you can upgrade without deactivating the evaluation license first.
+
+<Steps>
+  <Step title="Open the licensing options">
+    In Visual Components, go to **Home → Options → Licensing**. Your current evaluation license details appear.
+  </Step>
+  <Step title="Launch the activation wizard">
+    Click **Upgrade License** to open the activation wizard in upgrade mode.
+  </Step>
+  <Step title="Enter your full product key">
+    Type or paste your full (purchased) product key and click **Next**. The wizard contacts the license server, validates the upgrade, and replaces the evaluation license with your full license.
+  </Step>
+  <Step title="Confirm the upgrade">
+    When the wizard shows the full license edition and expiry date, click **Finish**. The upgrade is complete and the evaluation restrictions are removed.
+  </Step>
+</Steps>
+
+<Note>
+  Visual Components does not run properly in virtual machines with standalone licenses because the hardware fingerprint changes each time the VM starts. If you need to run Visual Components in a virtual machine, contact your reseller to discuss network license options.
+</Note>
+
+## Verifying your active license
+
+To check which license is currently active on your machine, go to **Home → Options → Licensing**. The licensing panel shows the edition, seat type (standalone or network), expiry date, and current activation status.

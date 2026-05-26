@@ -1,0 +1,146 @@
+---
+title: "Visual Components Python API: Scripting Overview"
+description: "Access the full simulation model from Python, automate component behavior, control robots, and build custom add-ons using the Visual Components Python API."
+---
+
+The Visual Components Python API gives you programmatic access to every part of the simulation: components, behaviors, signals, robots, statistics, and the application itself. With it you can automate repetitive tasks, drive component logic, react to simulation events, and integrate with external systems—all without leaving the Visual Components environment.
+
+## What the Python API can do
+
+The API exposes the simulation model as a tree of Python objects. At the top is the application (`vcApplication`), which contains components (`vcComponent`). Each component has behaviors (`vcBehaviour` subclasses) such as servo controllers, robot controllers, and script behaviors. Signals connect components together and carry Boolean, integer, real, and string values.
+
+You can use the API for:
+
+- **Component scripting** — attach Python logic directly to a component so it reacts to simulation events, changes its own properties, or communicates with other components
+- **Robot control** — call robot subroutines, set joint angles, and move to Cartesian positions from Python
+- **Custom add-ons** — package Python code as a `.vcax` add-on and distribute it to other users
+- **Statistics and reporting** — read metrics at the end of a simulation and write results to files
+- **Data exchange** — read production schedules from CSV files, write results back to CSV or call external APIs
+
+## Two API versions
+
+Visual Components currently ships with two Python environments side by side.
+
+<Tabs>
+  <Tab title="Python 3 (recommended)">
+    **Python 3** is the current standard and is required for Visual Components 5.0+. All new development should use Python 3.
+
+    - Uses Python 3.10 or later
+    - Import from `vcScript` module as before, but also supports standard library modules (`json`, `csv`, `pathlib`, `dataclasses`, etc.)
+    - Type annotations work correctly
+    - f-strings, walrus operator, and other modern Python syntax are fully supported
+    - The script editor in VC 5.0 highlights Python 3 syntax correctly
+  </Tab>
+  <Tab title="Python 2.7 (legacy)">
+    **Python API 2.7** is still supported for backward compatibility. Older layouts and add-ons written for Python 2.7 continue to work without modification.
+
+    - Uses Python 2.7
+    - All existing `vcScript` module functions remain available
+    - New features introduced in VC 5.0 may not be accessible from Python 2.7 scripts
+    - Migrating to Python 3 is recommended for all new projects
+
+    See [Introduction to Python API 2.7](/python-api/introduction) for a detailed overview of the legacy API.
+  </Tab>
+</Tabs>
+
+<Note>
+A single layout can contain components with both Python 3 and Python 2.7 scripts. Visual Components runs each script in the appropriate runtime automatically. However, you cannot import a Python 3 module from a Python 2.7 script or vice versa.
+</Note>
+
+## Core objects
+
+The following objects form the foundation of every Python script in Visual Components.
+
+<Accordion title="vcApplication">
+The top-level application object. Access it with `getApplication()` from any script.
+
+Key methods:
+- `findComponent(name)` — find a component by name in the current layout
+- `findComponents(filter)` — return a list of components matching a filter
+- `Components` — list of all components in the layout
+- `Simulation` — the current simulation object (`vcSimulation`)
+- `Layout` — the currently open layout file
+</Accordion>
+
+<Accordion title="vcComponent">
+Represents a single component in the 3D world. Each component has a name, a position, behaviors, and properties.
+
+Key methods:
+- `findBehaviour(name)` — get a behavior by name
+- `findBehavioursByType(type)` — get all behaviors of a given type
+- `getProperty(name)` — get a property value object
+- `Name` — the component's display name
+- `WorldPosition` — the component's position matrix in world coordinates
+</Accordion>
+
+<Accordion title="vcScript module">
+The `vcScript` module provides the functions that are called automatically by the simulation runtime.
+
+Entry points:
+- `getComponent()` — returns the component that owns the current script
+- `getApplication()` — returns the application object
+- `getSimulation()` — returns the current simulation
+
+These functions are available in any component script without any import statement. For full add-ons or standalone scripts, use `import vcScript` explicitly.
+</Accordion>
+
+<Accordion title="vcSimulation">
+Represents the simulation state and controls.
+
+Key properties:
+- `SimTime` — current simulation time in seconds
+- `IsRunning` — whether the simulation is currently executing
+- `Speed` — simulation speed multiplier
+
+Key methods:
+- `start()` — start the simulation
+- `stop()` — stop the simulation
+- `pause()` — pause the simulation
+</Accordion>
+
+## Your first script
+
+The simplest component script prints a message when the simulation starts and stops:
+
+```python
+from vcScript import *
+
+def OnStart():
+    comp = getComponent()
+    print(f'Simulation started. Component: {comp.Name}')
+
+def OnStop():
+    print('Simulation stopped.')
+```
+
+To add this script to a component:
+
+<Steps>
+  <Step title="Select the component">
+    Click the component in the 3D world to select it.
+  </Step>
+  <Step title="Open the script editor">
+    In the component's property panel, go to **Behaviors** tab and click **Add Behavior** → **Python Script**. A new script behavior appears. Click **Edit Script** to open the editor.
+  </Step>
+  <Step title="Write the script">
+    Paste or type the script into the editor. The editor provides syntax highlighting and basic autocompletion for `vcScript` objects.
+  </Step>
+  <Step title="Run the simulation">
+    Close the editor and start the simulation. Your `OnStart()` function fires immediately. Check the **Output** panel (View → Output) for the printed message.
+  </Step>
+</Steps>
+
+## What's covered in this section
+
+The following pages cover each area of the Python API in depth:
+
+| Page | Topic |
+|------|-------|
+| [Python 3 overview](/python-api/python3-overview) | What changed from 2.7, script editor, key patterns |
+| [Add-ons](/python-api/add-ons) | Installing and using Python add-ons |
+| [Component scripting](/python-api/component-scripting) | Writing logic inside components |
+| [Robot control](/python-api/robot-control) | Moving robots and controlling servos |
+| [Event handlers](/python-api/event-handlers) | Responding to simulation and component events |
+| [Blocking functions](/python-api/blocking-functions) | `delay()`, `waitSignal()`, `waitUntil()` |
+| [Import point cloud](/python-api/import-point-cloud) | Loading point cloud data with Python |
+| [Creating add-ons](/python-api/creating-add-ons) | Building .NET plugins for Visual Components |

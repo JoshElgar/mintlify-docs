@@ -1,0 +1,168 @@
+---
+title: "Record Simulations as Video, Animation, or 3D PDF"
+description: "Learn how to record Visual Components simulations as MP4/AVI video, VCAX animations, or interactive 3D PDFs—including camera control and component filtering."
+---
+
+Visual Components gives you several ways to capture and share simulation output: a video recording you can play anywhere, an animation file viewable in the Visual Components Experience app, or an interactive 3D PDF that stakeholders can explore without any simulation software. Each format suits a different audience and use case, so understanding when to use each one saves time when preparing deliverables.
+
+## Recording formats
+
+<Tabs>
+  <Tab title="Video (MP4 / AVI)">
+    Video recording captures the 3D world exactly as it appears on screen, frame by frame. You control the resolution, frame rate, and duration, then save the result as an MP4 or AVI file.
+
+    **When to use:** Presentations, customer demos, training materials, or any situation where the viewer doesn't have Visual Components installed.
+  </Tab>
+  <Tab title="Animation (VCAX)">
+    Animation export records the full simulation state—component positions, joint values, and signals—into a `.vcax` file. The Visual Components Experience mobile app can play this file back and let viewers walk through the scene in 3D.
+
+    **When to use:** Field reviews, walkthrough presentations on a tablet, or sharing with colleagues who have the Experience app.
+  </Tab>
+  <Tab title="3D PDF">
+    A 3D PDF embeds a snapshot of the simulation geometry into a standard PDF that can be opened in Adobe Acrobat Reader. Viewers can rotate, pan, and zoom the 3D model, and the document can also show a bill of materials.
+
+    **When to use:** Engineering reviews, quotes, and any situation where the recipient needs to inspect geometry in a familiar document format.
+  </Tab>
+</Tabs>
+
+## Record a video
+
+<Steps>
+  <Step title="Set the video resolution">
+    Go to **Output** tab → **Record Video**. Before starting the simulation, choose a resolution preset (for example, 1920×1080) or enter a custom width and height. Higher resolutions produce larger files and take longer to render.
+  </Step>
+  <Step title="Configure render mode">
+    In the recording settings panel, select a render mode. The **Realistic** render mode produces higher quality output but is slower. **Standard** mode is faster and suitable for most documentation purposes. You can also toggle the headlight on or off to control scene lighting.
+  </Step>
+  <Step title="Start recording">
+    Click **Record** to begin. The simulation starts automatically. A progress indicator in the Output panel shows elapsed time and estimated file size.
+  </Step>
+  <Step title="Stop and save">
+    Let the simulation run to completion, or click **Stop Recording** at any point. You are prompted to choose a save location and filename. Visual Components writes the file to disk immediately.
+  </Step>
+</Steps>
+
+<Note>
+Use **Virtual time** mode (not real-time) when recording video. Real-time mode can drop frames if your computer cannot keep up, producing a choppy recording. Virtual time ensures every frame is captured at the correct simulation interval.
+</Note>
+
+### Using a Fly Camera for cinematic shots
+
+A Fly Camera component lets you define a camera path that plays back during recording, producing smooth dolly and pan movements instead of a static viewpoint.
+
+<Steps>
+  <Step title="Add a Fly Camera component">
+    In the eCatalog, search for **Fly Camera** and drag it into your layout. Position it where you want the camera path to begin.
+  </Step>
+  <Step title="Record the camera path">
+    Select the Fly Camera component and click **Record Camera Path** in the component properties. Navigate the 3D view to your desired positions—each position you save becomes a keyframe. You can edit playback speed per segment.
+  </Step>
+  <Step title="Connect the camera to recording">
+    In the recording settings, set **Camera Source** to your Fly Camera component. The recording will follow the defined path during playback.
+  </Step>
+  <Step title="Use signals to trigger camera movements">
+    You can wire a Boolean signal to the Fly Camera so camera movement starts only when a specific simulation event fires—for example, when a robot begins a pick operation. This keeps the camera in sync with the action.
+  </Step>
+</Steps>
+
+### Stop simulation and save automatically
+
+To automate the end of a recording, add a **Simulation Stop** component or use a Python script that calls `sim.stop()` after a set duration. When the simulation stops, the recording stops and saves automatically if you enabled auto-save in the recording settings.
+
+## Record as animation (VCAX)
+
+<Steps>
+  <Step title="Open a layout">
+    Load the layout you want to record. Make sure the simulation runs correctly before you start the export.
+  </Step>
+  <Step title="Set simulation to virtual time">
+    In the simulation toolbar, switch from **Real-time** to **Virtual time**. This ensures the VCAX file captures every simulation step regardless of rendering speed.
+  </Step>
+  <Step title="Start the export">
+    Go to **Output** tab → **Export Animation**. This begins recording the simulation state into memory.
+  </Step>
+  <Step title="Run and stop the simulation">
+    Start the simulation. When you have captured enough of the process, stop or reset the simulation. Visual Components prompts you to save the `.vcax` file.
+  </Step>
+  <Step title="Open in Visual Components Experience">
+    Transfer the `.vcax` file to a device running the Visual Components Experience app (available for Android and iOS). Open the file in Experience to play back the animation and walk through the scene in 3D.
+  </Step>
+</Steps>
+
+### Recording camera movements for Experience
+
+When playing back a VCAX file in Experience, viewers can freely navigate the 3D scene. You can optionally record a guided camera path that viewers can switch to:
+
+<Steps>
+  <Step title="Add a Camera Animator component">
+    Find **Camera Animator** in the eCatalog and add it to your layout. This component records camera keyframes tied to simulation time.
+  </Step>
+  <Step title="Record keyframes">
+    Select the Camera Animator and click **Add Keyframe** at each point where you want the guided camera to pause. Set the transition duration between keyframes.
+  </Step>
+  <Step title="Export and view">
+    Export the animation as usual. In Experience, viewers can switch between free navigation and the recorded camera path using the playback controls.
+  </Step>
+</Steps>
+
+## Record as 3D PDF
+
+<Steps>
+  <Step title="Load or build your layout">
+    Open the layout you want to export. The 3D PDF captures geometry at the moment you trigger the export, not as an animation.
+  </Step>
+  <Step title="Run the Export PDF command">
+    Go to **Output** tab → **Export PDF**. A recording dialog appears.
+  </Step>
+  <Step title="Start recording">
+    Click **Start Recording** in the Export PDF dialog, then run the simulation. Visual Components captures geometry snapshots at the configured interval.
+  </Step>
+  <Step title="Move the camera (optional)">
+    While recording, you can pan and rotate the view. Camera movements are embedded in the PDF as predefined views that readers can switch between in Acrobat.
+  </Step>
+  <Step title="Stop recording and save">
+    Stop the simulation or click **Stop Recording**. Choose a filename and save location. Visual Components generates the PDF file.
+  </Step>
+  <Step title="View in Adobe Acrobat">
+    Open the PDF in Adobe Acrobat Reader (version 9 or later). Enable 3D content when prompted. You can rotate the model, inspect the bill of materials, and switch between saved views.
+  </Step>
+</Steps>
+
+<Warning>
+Some versions of Adobe Acrobat Reader block 3D content by default for security reasons. If the 3D model does not appear, go to **Edit → Preferences → 3D & Multimedia** in Acrobat and enable 3D content rendering.
+</Warning>
+
+### Bill of materials in 3D PDF
+
+The Export PDF command automatically generates a bill of materials based on the component names and quantities in your layout. Each row in the BOM links to the corresponding geometry in the 3D view—clicking a component name highlights it in the model.
+
+## Excluding components from recordings
+
+Sometimes you want to omit scaffolding, floor plans, or placeholder geometry from the exported output. Visual Components uses a **PDF Export Level** property on each component to control visibility.
+
+<Steps>
+  <Step title="Select the component to exclude">
+    Click the component in the 3D world to select it and open its property panel.
+  </Step>
+  <Step title="Find the PDF Export Level property">
+    In the component's **Behavior** or **General** properties, locate the **PDF Export Level** property. This applies to both 3D PDF and VCAX animation exports.
+  </Step>
+  <Step title="Set the export level">
+    Set **PDF Export Level** to `0` (or **None**) to exclude the component from all recordings. Set it to `1` for inclusion. Child components inherit the parent's setting unless overridden individually.
+  </Step>
+</Steps>
+
+<Tip>
+This is particularly useful when your layout includes a 2D floorplan image as a component. Excluding it from the 3D PDF keeps the exported file focused on the machinery and equipment rather than the background reference image.
+</Tip>
+
+## Monitoring recording progress
+
+The **Output** panel (View → Output) shows real-time feedback during all recording operations:
+
+- Current simulation time and elapsed wall-clock time
+- Estimated remaining time for the current recording
+- File size estimate
+- Any warnings about frame drops or geometry issues
+
+Keep the Output panel visible during long recordings so you can catch issues early.

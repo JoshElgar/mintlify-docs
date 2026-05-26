@@ -1,0 +1,186 @@
+---
+title: "Define Joints and Kinematics in Visual Components"
+description: "Configure revolute and prismatic joints, set limits and servo properties, and model conveyors, turn units, and 6-DOF robots in Visual Components."
+---
+
+Joints define how one node moves relative to its parent. Without joints, every part of your component is rigid—nothing moves during simulation. Visual Components 5.0 provides four joint types that cover the full range of mechanical relationships, from a simple door hinge to a six-axis robot arm.
+
+## Joint types overview
+
+You set a node's joint type in the node properties panel. Select the node in the Component Graph, then look at the **Joint** section.
+
+| Joint type | Motion | Typical use |
+|---|---|---|
+| **None (fixed)** | No motion | Static parts rigidly attached to parent |
+| **One-DOF Joint – Revolute** | Rotation around one axis | Robot joints, turn units, rotary tables |
+| **One-DOF Joint – Prismatic** | Translation along one axis | Conveyor belts, linear slides, pneumatic cylinders |
+| **Distance Joint** | Push/pull along an axis with soft limits | Physics cables, spring-loaded mechanisms |
+| **Fixed Joint** (physics) | Rigid connection between physics bodies | Joining physically simulated parts |
+
+<Note>
+  The **One-DOF Joint** is the workhorse for mechanical modeling. Choose between revolute and prismatic in the **Joint Type** dropdown after selecting the One-DOF option. The joint axis direction is set by the node's local coordinate frame—rotating or repositioning the node changes the axis of motion.
+</Note>
+
+## Setting joint properties
+
+After choosing a joint type, configure the following in the node properties:
+
+<Accordion title="Joint axis">
+  The joint moves along or around the node's local Z axis by default. To change the axis, rotate the node's local frame using the frame manipulation tools, or directly set the **AxisX / AxisY / AxisZ** direction vector in the joint properties.
+</Accordion>
+
+<Accordion title="Joint limits">
+  Enable **Use Limits** and set **MinValue** and **MaxValue** to clamp the joint's range of motion. For a revolute joint these are angles in degrees; for a prismatic joint they are distances in millimeters. Limits are enforced both in simulation and during manual dragging in the 3D view.
+</Accordion>
+
+<Accordion title="Servo controller properties">
+  Every One-DOF joint has an associated **Servo Controller** behavior that governs how the joint moves. Key properties:
+
+  - `MaxSpeed` — maximum velocity (mm/s for prismatic, deg/s for revolute)
+  - `Acceleration` — ramp-up rate
+  - `Deceleration` — ramp-down rate
+  - `HomeValue` — position the joint returns to on simulation start
+  - `CurrentValue` — readable/writable joint position
+
+  You can drive a servo controller from a Python script, from a signal connection, or directly from a PLC via OPC UA.
+</Accordion>
+
+## Modeling a simple conveyor
+
+A belt conveyor uses a **prismatic joint** to move products along the belt path. In practice, you don't model the belt physically moving—instead, you define a **path** along the conveyor surface, and products are transported along that path at the belt speed.
+
+<Steps>
+  <Step title="Import or create geometry">
+    Start with imported CAD or build the frame and belt surface from primitives. Split the geometry so the belt surface is on a separate node from the frame.
+  </Step>
+  <Step title="Run the Conveyor Wizard">
+    Select the belt-surface node and go to **Modeling > Conveyor Wizard**. The wizard automatically creates:
+    - A **One-Way Path** behavior defining the transport direction
+    - **Path sensor** behaviors at the start and end
+    - **Interface** behaviors for connecting to adjacent conveyors
+    - Signals wired to the sensors
+  </Step>
+  <Step title="Set conveyor speed">
+    After the wizard runs, select the path behavior and set **Speed** (mm/s). You can also expose this as a component property so users can adjust it from the Component Properties panel without opening the component for editing.
+  </Step>
+  <Step title="Test transport">
+    Place a product (e.g., a Box component) on the conveyor input interface and run the simulation. The product should travel to the output interface at the configured speed.
+  </Step>
+</Steps>
+
+<Tip>
+  For a **parametric conveyor** whose length you can change, use the Slice feature tool to make the belt geometry scalable, then add a `Length` property and expression. The Conveyor Wizard re-runs correctly after you resize the component.
+</Tip>
+
+## Modeling a turn unit (revolute joint)
+
+A turn unit is a conveyor segment that rotates products from one direction to another. The rotating platform uses a **revolute joint**.
+
+<Steps>
+  <Step title="Extract the rotating part into its own node">
+    After importing geometry, use the Split tool to separate the turntable top surface from the frame. Place the top-surface geometry on a child node.
+  </Step>
+  <Step title="Set the joint type to revolute">
+    Select the child node, set **Joint Type = One-DOF Joint**, and choose **Revolute**. Set the rotation axis to Z (vertical). Set the joint home value to `0` and optionally set limits to `0–360`.
+  </Step>
+  <Step title="Define a one-way path on the turntable">
+    The path curves with the rotation. Define the path using frames placed on the rotating node so the transport direction changes as the turntable rotates.
+  </Step>
+  <Step title="Add sensors and signals">
+    Add path sensors at the midpoint (product arrived, start rotation) and endpoint (rotation complete, release product). Wire signals to a Python script that controls the servo.
+  </Step>
+  <Step title="Add interfaces">
+    Place interface behaviors at the entry and exit of the turntable to connect it to upstream and downstream conveyors.
+  </Step>
+</Steps>
+
+## Modeling an articulated robot (6 DOF)
+
+An articulated robot has six revolute joints in series. Visual Components provides a **template robot** you can use to avoid setting up the kinematics from scratch.
+
+<Steps>
+  <Step title="Import robot geometry">
+    Import the robot CAD file (usually a STEP assembly). The result is typically a flat list of geometry bodies. Do not reorganize yet.
+  </Step>
+  <Step title="Modify the component origin">
+    Set the root node's position so the robot base sits at world origin (0, 0, 0). This makes placement in a layout predictable.
+  </Step>
+  <Step title="Add a template robot">
+    Go to **Modeling > Add Template > Articulated Robot**. This inserts a pre-built 6-DOF kinematic structure with correctly named links (Link1–Link6) and a robot controller behavior.
+  </Step>
+  <Step title="Move geometry to template links">
+    In the Component Graph, drag each imported geometry body to its corresponding template link: base geometry to the root, J1 arm to Link1, J2 arm to Link2, and so on.
+  </Step>
+  <Step title="Update kinematics">
+    Go to **Modeling > Update Kinematics**. Specify the DH parameters or set each joint axis by positioning the joint frames to match the actual robot geometry. The kinematics solver recalculates the forward and inverse kinematics automatically.
+  </Step>
+  <Step title="Update joint limits">
+    Set `MinValue` and `MaxValue` for each of the six joints based on the manufacturer's datasheet. Also set `MaxSpeed` for each joint.
+  </Step>
+  <Step title="Save and test">
+    Save the component, then place it in a new layout. Use **Robot > Jog** to verify that each joint moves correctly and that inverse kinematics places the TCP at the expected position.
+  </Step>
+</Steps>
+
+<Warning>
+  Joint axis directions must match the physical robot exactly. A wrong axis direction on joint 3 will cause the IK solver to produce incorrect poses that may not be detectable until you try to run a full robot program.
+</Warning>
+
+## Kinematics solver
+
+Visual Components uses a built-in kinematics solver for all robot components. The solver supports:
+
+- **Forward kinematics (FK)**: Given joint angles, compute TCP position and orientation
+- **Inverse kinematics (IK)**: Given TCP target pose, compute joint angles (multiple solutions may exist)
+- **Reachability checking**: Highlight poses outside the robot's workspace
+
+The solver relies on the joint hierarchy, axis directions, and link lengths you define in the node structure. For non-standard robot configurations (e.g., 7-DOF, parallel robots, Cartesian gantries), you can override the built-in solver with a **Python kinematics script** that computes joint angles programmatically.
+
+## Distance joint
+
+The distance joint defines a push-pull relationship between two physics bodies along a specified axis. Unlike the One-DOF joint, it is designed for use with the physics engine.
+
+<Steps>
+  <Step title="Set up two physics bodies">
+    Both nodes participating in the joint must have **PhysicsEntity** behaviors with physics type set to **Dynamic**.
+  </Step>
+  <Step title="Add a physics joint behavior">
+    Select the child node and add a **PhysicsJoint** behavior. Set the joint type to **Distance**.
+  </Step>
+  <Step title="Configure the axis and limits">
+    Specify the joint axis direction and set **MinDistance** and **MaxDistance** to define the range of travel. Enable **SoftLimits** to add spring-like behavior at the limits instead of a hard stop.
+  </Step>
+  <Step title="Optional: Add a physics cable">
+    A distance joint with a maximum distance and soft limits simulates a cable or tether. The cable applies a restoring force when the distance reaches the maximum, pulling the bodies back together.
+  </Step>
+</Steps>
+
+## Fixed joint (physics)
+
+A fixed physics joint locks two dynamic physics bodies together rigidly while still letting the combined system interact with the physics world. This is different from simply placing geometry on the same node, because a fixed joint can be broken at runtime by a Python script (e.g., to simulate a snap-fit failing under load).
+
+<Steps>
+  <Step title="Change physics type">
+    Both participating nodes must have **PhysicsEntity** behaviors. Set the physics type to **Dynamic** or **Kinematic** as appropriate.
+  </Step>
+  <Step title="Add a physics joint">
+    On the child node, add a **PhysicsJoint** behavior and set the joint type to **Fixed**.
+  </Step>
+  <Step title="Assign the parent body">
+    In the PhysicsJoint properties, set the **BodyA** reference to the parent physics body. The joint anchor point defaults to the child node's origin.
+  </Step>
+</Steps>
+
+## Common joint modeling mistakes
+
+<Accordion title="Joint axis pointing the wrong direction">
+  If a revolute joint rotates around Y instead of Z, the node's local frame is not oriented correctly. Reorient the node frame using the **Transform** tool before setting the joint, or manually enter the AxisX/Y/Z direction vector.
+</Accordion>
+
+<Accordion title="Geometry on the wrong node">
+  Moving geometry affects which node it moves with. Always confirm in the Component Graph that each geometry feature is under the node you intend. A common mistake is leaving part of the moving assembly on the root node—it will appear to stay fixed during simulation.
+</Accordion>
+
+<Accordion title="Missing servo controller">
+  The servo controller is added automatically when you set joint type to One-DOF. If it is missing, the joint has no motion target and won't respond to script commands. Check that the node has both a joint and a ServoController behavior.
+</Accordion>

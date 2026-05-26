@@ -1,0 +1,96 @@
+---
+title: "Understanding Components in Visual Components"
+description: "Learn what components are in Visual Components, the types available in the eCatalog, how to select and manipulate them, and how the component tree works."
+---
+
+In Visual Components, a component is a reusable 3D object that represents a piece of equipment or any other element in your simulation. Every item you place in a layout — a robot arm, a conveyor belt, a machine, a product part, or even a wall section — is a component. Components are not just static geometry: they contain behaviors, kinematics, signals, and logic that make them interact with each other and respond to the simulation engine.
+
+## Component types
+
+The eCatalog organizes components into categories based on their function. The main categories are:
+
+<AccordionGroup>
+  <Accordion title="Robots">
+    Articulated robot arms from major manufacturers including KUKA, ABB, Fanuc, YASKAWA, Universal Robots, and others. Robot components include full kinematic models, configurable reach envelopes, and tool flange connection points. In Professional and Premium editions, robot components support full programming, path teaching, and OLP.
+  </Accordion>
+  <Accordion title="Conveyors and transport">
+    Belt conveyors, roller conveyors, chain conveyors, turntables, lifts, and transfer units. These components have configurable speed, direction, and length parameters. They connect to each other and to other process resources through transport links to model complete material flow paths.
+  </Accordion>
+  <Accordion title="Machines and process resources">
+    CNC machines, welding cells, assembly stations, presses, and other manufacturing equipment modeled as process resources. These components define work operations that products flow through and include configurable cycle times and buffer capacities.
+  </Accordion>
+  <Accordion title="Feeders and sources">
+    Product sources and feeders that generate products at defined rates and introduce them into the material flow. Configurable parameters include product type, creation interval, and batch size.
+  </Accordion>
+  <Accordion title="Products">
+    The items that flow through your simulation — parts, assemblies, pallets, containers. Product components define the geometry and properties of what the robots and machines handle.
+  </Accordion>
+  <Accordion title="Human resources and infrastructure">
+    Human operator models, safety fences, structural elements, and facility components for building realistic factory environments.
+  </Accordion>
+</AccordionGroup>
+
+## Selecting components
+
+You select components in the 3D world by clicking on them. A selected component highlights with a colored outline and shows its manipulation gizmo.
+
+| Selection action | Method |
+|---|---|
+| Select a component | Left-click on it in the 3D world |
+| Add to selection | Hold **Ctrl** and click additional components |
+| Remove from selection | Hold **Ctrl** and click a selected component |
+| Box select | Click and drag in empty space to draw a selection rectangle |
+| Select all | Press **Ctrl + A** |
+| Deselect all | Click in empty space or press **Escape** |
+
+You can also select components from the **Component Tree** panel (see below) by clicking their names, which is useful when components overlap or are hidden behind other geometry.
+
+## Manipulating components
+
+Once a component is selected, you can move, rotate, and configure it:
+
+**Move** — drag the colored axis arrows of the move gizmo to translate the component along X (red), Y (green), or Z (blue). You can also type exact coordinates in the properties panel.
+
+**Rotate** — press **R** to switch to the rotate gizmo, then drag the colored arcs to rotate around each axis.
+
+**Scale** — most components do not support free scaling because it would distort their kinematic models. Parametric dimensions (length, width, height) are instead controlled through the properties panel.
+
+**Duplicate** — press **Ctrl + D** to duplicate a selected component in place. The duplicate has the same configuration as the original.
+
+**Delete** — press the **Delete** key to remove a selected component from the layout.
+
+## The component tree (scene graph)
+
+The component tree shows the hierarchical structure of all components in your current layout. You can open it from **Home → Panels → Component Tree**.
+
+The tree lists every component in the layout. Expanding a component in the tree reveals its internal structure: nodes (geometry links), behaviors (logic and kinematics), and child components attached to it. For example, a robot component expands to show its base, links, flange, and any attached tool.
+
+The component tree is useful for:
+
+- Selecting components that are difficult to click in the 3D world (hidden, overlapping, or inside other components).
+- Navigating complex assemblies to select a specific node or child component.
+- Reorganizing the simulation hierarchy by dragging components to new parent positions.
+- Checking which components are in the layout at a glance.
+
+## Configuring component properties
+
+With a component selected, its configurable properties appear in the **Properties** panel on the right side of the screen. The properties displayed depend on the component type:
+
+- **Position and orientation** — X, Y, Z coordinates and rotation angles, always shown at the top.
+- **Component-specific parameters** — for example, conveyor speed and direction, robot payload and maximum speed, or machine cycle time.
+- **Signals** — digital and analog I/O signals for connecting the component to control logic.
+- **Statistics** — throughput, utilization, and cycle time data collected during simulation runs.
+
+<Tip>
+  Right-click a component in the 3D world to access a context menu with common actions: **Properties**, **Duplicate**, **Delete**, **Hide**, and **Save Component** (to save a modified component back to the eCatalog).
+</Tip>
+
+## Saving a custom component
+
+If you modify a component — adding custom geometry, changing behaviors, or adjusting kinematics — you can save it as a reusable `.vcmx` component file:
+
+1. Select the component in the 3D world.
+2. Right-click and choose **Save Component As**.
+3. Choose a location in your eCatalog (or a local folder you have added as a source) and give it a name.
+
+The saved component appears in your eCatalog and can be reused in future layouts like any other catalog item.

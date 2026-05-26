@@ -1,0 +1,94 @@
+---
+title: "Component Modeling in Visual Components: Overview"
+description: "Learn the full workflow for creating custom 3D components in Visual Components 5.0, from geometry and link hierarchy to joints and behaviors."
+---
+
+Component modeling in Visual Components 5.0 gives you the tools to build any machine, fixture, conveyor, or robot from scratch—or to transform imported CAD into a fully functional simulation asset. Whether you start from primitive geometry or a STEP file, the process follows a consistent structure: establish the visual geometry, organize it into a node hierarchy, define joints that allow motion, and attach behaviors that govern how the component acts during simulation.
+
+## What is a component?
+
+Every object in a Visual Components layout is a **component**. A component consists of one or more **nodes** (also called links), each of which can hold geometry and be connected to its parent node through a **joint**. On top of that structural skeleton you layer **behaviors**—scripts, signals, paths, sensors, and physics—that make the component interact with the rest of the simulation.
+
+You work with components almost exclusively through the **Component Graph** panel, which shows the full node tree, and the **Component Properties** panel, which exposes the active component's editable parameters.
+
+## Core workflow
+
+<Steps>
+  <Step title="Create or import geometry">
+    Start a new component with **File > New Component**, then build geometry using primitives (Box, Cylinder, Sphere, Cone) or import a CAD file (STEP, JT, OBJ, STL). Geometry lives on a node—the root node is created automatically.
+  </Step>
+  <Step title="Organize the node hierarchy">
+    Add child nodes to represent movable parts. Use the Component Graph to drag geometry features between nodes. The hierarchy determines which parts move together when a joint is actuated.
+  </Step>
+  <Step title="Define joints">
+    Select a node and set its **Joint Type** in the node properties. Common types are **One-DOF Joint** (revolute or prismatic), **Fixed Joint** (rigid connection), and **Distance Joint** (spring or cable-like connection). Configure joint limits, speed, and acceleration under the servo properties.
+  </Step>
+  <Step title="Add behaviors">
+    Right-click a node or the component root in the Component Graph and choose **Add Behavior**. Behaviors include Python scripts, signal connections, path containers, physics entities, sensors, and state machines.
+  </Step>
+  <Step title="Test and save">
+    Run a quick simulation to verify motion and logic, then save the component to your local eCatalog with **File > Save Component**.
+  </Step>
+</Steps>
+
+## Component Graph panel
+
+The Component Graph is your primary modeling workspace. Open it from **View > Component Graph** or by pressing `F5`. It shows:
+
+- The component root and all child nodes in a collapsible tree
+- Geometry features (Box, Cylinder, imported CAD, Boolean, etc.) nested under each node
+- Behaviors attached to each node
+- Frame nodes used to define origins, interface points, and sensor locations
+
+<Tip>
+  Select any node in the Component Graph before adding a behavior or geometry feature—new items are created as children of the currently selected node.
+</Tip>
+
+## Node types and roles
+
+| Node type | Typical role |
+|---|---|
+| Root node | Base of the component; holds static geometry |
+| Child node (link) | Movable part; connected to parent through a joint |
+| Frame node | Defines a coordinate frame (e.g., tool center point, interface) |
+| World frame node | Locks a node's position to world coordinates |
+
+## What can you model?
+
+<Accordion title="Conveyors and inline machines">
+  Use a **prismatic joint** for belt travel direction and the Conveyor Wizard to auto-generate path, sensors, and interfaces. Both simple (from imported CAD) and parametric (from primitives with expressions) conveyors are supported.
+</Accordion>
+
+<Accordion title="Articulated robots">
+  Import robot geometry as a STEP file, attach a robot template, reassign geometry to the correct links, and set joint axes and limits. Visual Components ships a generic 6-DOF articulated robot template you can use as a starting point.
+</Accordion>
+
+<Accordion title="Turn units and rotary devices">
+  Use a **revolute joint** on the rotating platform node. Define a one-way path around the center to carry parts, add path sensors for detection, and wire logic in Python.
+</Accordion>
+
+<Accordion title="Physics-driven components">
+  Add a **PhysicsEntity** behavior to any node to subject it to gravity, friction, and collisions. Combine with **PhysicsCollider** shapes and a **ComponentCreator** to build feeders, gravity chutes, and containers that interact with real-mass parts.
+</Accordion>
+
+## Key concepts to understand first
+
+Before diving into individual topics, make sure you understand these foundational ideas:
+
+- **Node vs. geometry feature**: A node is a structural element in the hierarchy. A geometry feature (Box, Cylinder, Boolean, etc.) is the visual shape attached to a node.
+- **Joint vs. servo**: The joint type defines the degree of freedom. The servo controller defines motion limits, speed, acceleration, and homing behavior.
+- **Behavior vs. property**: Behaviors add functional capability (e.g., a Python script, a sensor). Properties are named values on a node or behavior that you can read and write in scripts or expose to users.
+- **Signal**: A named boolean, integer, or real value on a component used to communicate with other components, PLCs, or robot controllers.
+
+<Note>
+  The Modeling Pack add-on (included in Visual Components Premium and Professional) unlocks additional geometry tools such as Boolean operations, the Conveyor Wizard, and advanced feature tools like Slice, Merge, and Split. Some exercises in this section require the Modeling Pack.
+</Note>
+
+## Next steps
+
+Follow the topics in this section in order for the best learning experience:
+
+1. [Create and Import 3D Geometry](/guides/component-modeling/geometry) — Build the visual shape of your component
+2. [Define Joints and Kinematics](/guides/component-modeling/joints-and-kinematics) — Give your component motion
+3. [Add Behaviors and Scripts](/guides/component-modeling/behaviors) — Bring logic and interactivity
+4. [Physics Simulation](/guides/component-modeling/physics) — Add realistic physical interactions

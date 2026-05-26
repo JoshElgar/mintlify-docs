@@ -1,0 +1,152 @@
+{
+  "projectType": "saas",
+  "projectName": "Visual Components Academy",
+  "projectDescription": "Visual Components Academy is the official learning platform for Visual Components 3D manufacturing simulation software, providing courses, lessons, and learning paths covering robot programming, process modeling, component modeling, and connectivity.",
+  "theme": "maple",
+  "primaryColor": "#040404",
+  "lightColor": "#fcb404",
+  "darkColor": null,
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Getting Started",
+        "groups": [
+          {
+            "group": "Introduction",
+            "pages": [
+              "getting-started/overview",
+              "getting-started/installation",
+              "getting-started/interface",
+              "getting-started/navigation"
+            ]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "getting-started/layouts",
+              "getting-started/components",
+              "getting-started/simulation",
+              "getting-started/ecatalog"
+            ]
+          },
+          {
+            "group": "Licensing",
+            "pages": [
+              "getting-started/licensing",
+              "getting-started/license-activation",
+              "getting-started/license-deactivation"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Guides",
+        "groups": [
+          {
+            "group": "Process Modeling",
+            "pages": [
+              "guides/process-modeling/introduction",
+              "guides/process-modeling/products-and-flows",
+              "guides/process-modeling/transport-links",
+              "guides/process-modeling/process-statements",
+              "guides/process-modeling/resources",
+              "guides/process-modeling/assembly"
+            ]
+          },
+          {
+            "group": "Robot Simulation",
+            "pages": [
+              "guides/robot-simulation/introduction",
+              "guides/robot-simulation/robot-teaching",
+              "guides/robot-simulation/robot-programming",
+              "guides/robot-simulation/offline-programming",
+              "guides/robot-simulation/reachability",
+              "guides/robot-simulation/signals"
+            ]
+          },
+          {
+            "group": "Component Modeling",
+            "pages": [
+              "guides/component-modeling/introduction",
+              "guides/component-modeling/geometry",
+              "guides/component-modeling/joints-and-kinematics",
+              "guides/component-modeling/behaviors",
+              "guides/component-modeling/physics"
+            ]
+          },
+          {
+            "group": "Connectivity",
+            "pages": [
+              "guides/connectivity/opc-ua",
+              "guides/connectivity/plc-siemens",
+              "guides/connectivity/mqtt",
+              "guides/connectivity/robot-plugins"
+            ]
+          },
+          {
+            "group": "Visualization & Output",
+            "pages": [
+              "guides/visualization/recording",
+              "guides/visualization/vr-streaming",
+              "guides/visualization/statistics",
+              "guides/visualization/export"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Python API",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": [
+              "python-api/introduction",
+              "python-api/python3-overview",
+              "python-api/add-ons"
+            ]
+          },
+          {
+            "group": "Scripting",
+            "pages": [
+              "python-api/component-scripting",
+              "python-api/robot-control",
+              "python-api/event-handlers",
+              "python-api/blocking-functions"
+            ]
+          },
+          {
+            "group": "Advanced",
+            "pages": [
+              "python-api/import-point-cloud",
+              "python-api/creating-add-ons"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "3D factory simulation and layout modeling",
+    "Robot simulation and offline programming (OLP)",
+    "Process modeling with material flow and transport links",
+    "Component modeling with custom geometry, joints, and behaviors",
+    "Virtual commissioning with PLC connectivity (OPC UA, TwinCAT, S7)",
+    "Python API and .NET add-on extensibility",
+    "VR streaming and interactive visualization",
+    "Statistics and simulation reporting",
+    "eCatalog library of pre-built components",
+    "Multi-robot brand support (KUKA, ABB, FANUC, Universal Robots, and more)"
+  ],
+  "publicApiSurface": [
+    "Python API 2.7 / Python 3 scripting interface",
+    "OPC UA server/client connectivity",
+    "MQTT client integration",
+    "Robot brand connectivity plugins (ABB, KUKA, FANUC, UR, Yaskawa, Kawasaki, Denso, Staubli, etc.)",
+    "PLC connectivity (Siemens S7, TwinCAT, PLCSim Advanced)",
+    "Process modeling statements (Transport, Reserve Product, WaitSignal, SendSignal)",
+    ".NET application plugin API",
+    "CSV data import/export",
+    "CAD import (STEP, JT, DWG, and more)",
+    "3D PDF and video export"
+  ]
+}

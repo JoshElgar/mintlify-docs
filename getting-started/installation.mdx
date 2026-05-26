@@ -1,0 +1,83 @@
+---
+title: "Install Visual Components on Windows"
+description: "System requirements, download instructions, and a step-by-step installation guide for Visual Components 5.0 on Windows 10 or Windows 11."
+---
+
+Visual Components 5.0 runs on 64-bit Windows and requires a dedicated GPU for smooth 3D rendering. Before you install, confirm that your machine meets the requirements below, then download the installer from the Visual Components website and follow the installation wizard.
+
+## System requirements
+
+<Tabs>
+  <Tab title="Minimum">
+    | Component | Requirement |
+    |---|---|
+    | Operating system | Windows 10 (64-bit) or Windows 11 (64-bit) |
+    | Processor | Intel Core i5 or AMD Ryzen 5 (quad-core, 2.5 GHz) |
+    | RAM | 8 GB |
+    | GPU | Dedicated GPU with 2 GB VRAM, DirectX 11 support |
+    | Storage | 4 GB free disk space (installation) |
+    | Display | 1920 × 1080 resolution |
+    | Internet | Required for license activation and eCatalog access |
+  </Tab>
+  <Tab title="Recommended">
+    | Component | Requirement |
+    |---|---|
+    | Operating system | Windows 11 (64-bit) |
+    | Processor | Intel Core i7/i9 or AMD Ryzen 7/9 (8+ cores, 3.5 GHz+) |
+    | RAM | 32 GB |
+    | GPU | NVIDIA GeForce RTX or Quadro series, 8 GB+ VRAM |
+    | Storage | SSD with 20 GB free disk space |
+    | Display | 2560 × 1440 or higher, second monitor recommended |
+    | Internet | Broadband for eCatalog downloads and online license management |
+  </Tab>
+</Tabs>
+
+<Warning>
+  Visual Components is a 64-bit application only. 32-bit Windows installations are not supported.
+</Warning>
+
+<Tip>
+  For large factory layouts with hundreds of components and running robot programs, prioritize CPU clock speed and RAM over GPU memory. Simulations are primarily CPU-bound.
+</Tip>
+
+## Install Visual Components
+
+<Steps>
+  <Step title="Download the installer">
+    Go to [visualcomponents.com/downloads](https://www.visualcomponents.com/downloads/) and sign in with your Visual Components account. Select the Visual Components 5.0 installer for your edition (Essentials, Professional, or Premium) and download the `.exe` file.
+  </Step>
+  <Step title="Run the installer">
+    Locate the downloaded file (for example, `VisualComponents_5.0_Professional_Setup.exe`) and double-click it to launch the installation wizard. If Windows prompts for administrator permission, click **Yes** to allow the installer to run.
+  </Step>
+  <Step title="Accept the license agreement">
+    Read the End User License Agreement and click **I Agree** to proceed. You cannot continue without accepting the agreement.
+  </Step>
+  <Step title="Choose an installation folder">
+    The default installation path is `C:\Program Files\Visual Components\Visual Components 5.0\`. To use a different location, click **Browse** and select your preferred folder. Click **Next** to continue.
+  </Step>
+  <Step title="Select components">
+    The installer presents optional components such as robot post-processors and sample layouts. Check the items you want to install alongside the core application. The default selection is appropriate for most users.
+  </Step>
+  <Step title="Complete the installation">
+    Click **Install** to begin copying files. The installation typically takes 3–5 minutes depending on your hardware and the components you selected. When the wizard shows **Installation complete**, click **Finish**.
+  </Step>
+  <Step title="Launch and activate">
+    Open Visual Components from the Start menu or desktop shortcut. On first launch, the license activation wizard appears. See [License Activation](/getting-started/license-activation) for step-by-step activation instructions.
+  </Step>
+</Steps>
+
+## Updating Visual Components
+
+Visual Components notifies you when a newer version is available through an in-application banner. To update:
+
+1. Download the new installer from [visualcomponents.com/downloads](https://www.visualcomponents.com/downloads/).
+2. Run the installer on top of the existing installation — the wizard detects the installed version and upgrades it.
+3. Your layouts, custom components, and eCatalog settings are preserved across updates.
+
+<Note>
+  Your license remains valid after an update. You do not need to reactivate unless you move the license to a different machine.
+</Note>
+
+## Uninstalling
+
+To remove Visual Components, open **Windows Settings → Apps**, find **Visual Components 5.0** in the list, and select **Uninstall**. Your personal layout files and custom components stored outside the installation folder are not removed.

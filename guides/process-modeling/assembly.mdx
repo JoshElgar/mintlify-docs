@@ -1,0 +1,152 @@
+---
+title: 'Model Assembly and Disassembly in Process Modeling'
+description: "Create assembly product types, configure processes with slots and steps, and complete attach and detach operations during Visual Components simulation."
+---
+
+Assembly operations combine multiple individual products into a single composite product, or break a composite product back into its constituent parts. In Process Modeling, this is handled through **assembly product types** — a special category of product type that defines the structure of the composite, including which sub-components are required and how many slots they occupy. Configuring assembly correctly lets you simulate palletizing, kitting, product joining, and any operation where multiple discrete parts become one trackable item.
+
+## What makes an assembly product type different
+
+A standard product type represents a single indivisible item. An **assembly product type** represents a container — it has a defined list of **slots**, each of which holds a sub-component product. The assembly is considered complete when all slots are filled.
+
+During simulation, an assembly product type instance travels through the flow like any other product, but its process statements can attach and detach sub-components as it passes through assembly or disassembly stations.
+
+<Note>
+You distinguish an assembly product type from a standard product type in the **Product Type Editor** by the **Assembly** checkbox at the top of the type definition. Enabling this checkbox opens the Assembly Editor where you define slots.
+</Note>
+
+## Assembly concepts
+
+<AccordionGroup>
+  <Accordion title="Slots">
+    A slot is a defined position inside the assembly where one sub-component product is placed. Each slot has a 3D position and orientation relative to the assembly's geometry. You can add slots manually or use the pattern tool to place a grid of evenly spaced slots.
+  </Accordion>
+  <Accordion title="Assembly steps">
+    Steps define the order in which slots are filled during the simulation. The first assembly step fills slot 1, the second fills slot 2, and so on. You can reorder steps in the Assembly Editor to match the physical build sequence of your process.
+  </Accordion>
+  <Accordion title="Sub-component product types">
+    Each slot references a product type that goes into that slot. The Attach statement at the assembly station pulls a product of the matching type from the incoming transport link and places it in the next available slot.
+  </Accordion>
+</AccordionGroup>
+
+## Creating an assembly product type
+
+You create assembly product types in the **Product Type Editor**, which you open from the **Process** tab of the properties panel when any PM component is selected.
+
+<Steps>
+  <Step title="Add the component geometries to the scene">
+    Place both the assembly container geometry (e.g., a pallet or housing) and the sub-component geometries (e.g., boxes or cans) into the 3D scene. Give each a descriptive name in the scene graph.
+  </Step>
+  <Step title="Create standard product types for the sub-components">
+    In the Product Type Editor, create a standard product type for each sub-component. Assign each its corresponding geometry.
+  </Step>
+  <Step title="Create the assembly product type">
+    Click **Add Product Type**, then check the **Assembly** checkbox. This converts the type to an assembly type and activates the Assembly Editor button.
+  </Step>
+  <Step title="Open the Assembly Editor">
+    Click **Assembly Editor**. The editor shows the assembly geometry in the 3D viewport alongside a slot list and step sequence.
+  </Step>
+  <Step title="Add slots">
+    Click **Add Slot** to place a slot on the assembly geometry. Position it using the 3D manipulator in the viewport. For regular grids (pallets, trays), use **Add Slot Pattern** to specify rows, columns, and layers — the editor generates all slot positions automatically.
+  </Step>
+  <Step title="Assign sub-component types to slots">
+    For each slot, select the product type that fills it from the **Sub-component** drop-down. All slots in a simple assembly usually share the same sub-component type, but you can mix types for kitting scenarios.
+  </Step>
+  <Step title="Define assembly steps">
+    In the **Steps** list, verify or adjust the order in which slots are filled. Drag steps to match the physical build sequence.
+  </Step>
+  <Step title="Center slots (optional)">
+    Use the **Center Slots** tool to automatically align the slot pattern to the center of the assembly geometry's bounding box.
+  </Step>
+</Steps>
+
+### Using the Auto Assembly add-on
+
+The **Auto Assembly** add-on (available from the Visual Components Forum) can generate assembly product types automatically from an existing scene geometry arrangement. It analyzes the positions of components in the scene and creates the slot pattern to match.
+
+<Steps>
+  <Step title="Install the add-on">
+    Download the Auto Assembly add-on from the Visual Components Forum and install it via the **Add-Ons** menu.
+  </Step>
+  <Step title="Arrange the geometry in the scene">
+    Position the sub-component geometries in the scene in the exact layout they should occupy in the assembly.
+  </Step>
+  <Step title="Run Auto Assembly">
+    Select the assembly container geometry, then run the Auto Assembly tool from the add-on ribbon. The tool creates an assembly product type with slots matching the positions of the surrounding sub-component objects.
+  </Step>
+</Steps>
+
+## Configuring the assembly process
+
+Once you have defined the assembly product type, you need to configure the process at the assembly station with the correct statements to perform attach operations during the simulation.
+
+### Assembly station layout
+
+A typical assembly station layout looks like this:
+
+- **Feeder A** — feeds the assembly container product type (e.g., a pallet)
+- **Feeder B** — feeds the sub-component product type (e.g., boxes)
+- **Assembly Station** — receives both products and attaches sub-components into the assembly
+- **Sink** — receives the completed assembly
+
+Connect feeders to the assembly station with transport links. Feeder A's link carries the assembly container; Feeder B's link carries the sub-components. Use product type filters on the links so each feeder's products arrive on the correct link.
+
+### Process statements for assembly
+
+<Steps>
+  <Step title="Transport In the assembly container">
+    Add a **Transport In** statement to receive the assembly container from Feeder A. Set the Source to Feeder A or filter by the container product type.
+  </Step>
+  <Step title="Transport In the sub-components">
+    Add a **Transport In** statement (or multiple statements) to receive sub-components from Feeder B. Each Transport In claims one sub-component.
+  </Step>
+  <Step title="Add Attach statements">
+    Add an **Attach** statement for each sub-component. The Attach statement takes the sub-component product currently held by the process and places it into the next available slot in the assembly container. Repeat for each slot in the assembly.
+  </Step>
+  <Step title="Add a Delay (optional)">
+    Add a **Delay** statement between attachments to simulate the time each attachment operation takes.
+  </Step>
+  <Step title="Transport Out the completed assembly">
+    Once all slots are filled, add a **Transport Out** statement to send the completed assembly to the next process or the sink.
+  </Step>
+</Steps>
+
+<Tip>
+For assemblies with many slots, use a loop structure with a **Get Property** statement to read the current slot index and exit the loop when the index exceeds the total number of slots. This avoids repeating individual Attach statements for each slot.
+</Tip>
+
+## Disassembly
+
+Disassembly reverses the process — an assembly product type enters a station and sub-components are detached and sent to separate downstream processes.
+
+<Steps>
+  <Step title="Transport In the assembly">
+    Receive the assembly product at the disassembly station using a **Transport In** statement.
+  </Step>
+  <Step title="Add Detach statements">
+    Add a **Detach** statement for each sub-component to remove. Specify the slot index to detach from. The detached product becomes a standalone product instance that the process can then send downstream.
+  </Step>
+  <Step title="Transport Out each detached sub-component">
+    After each Detach, add a **Transport Out** statement to send the released sub-component to its destination. Use product type filters on the links to route different sub-component types to different downstream processes.
+  </Step>
+  <Step title="Transport Out the empty assembly container">
+    After all detachments are complete, send the empty assembly container to a sink or back into circulation.
+  </Step>
+</Steps>
+
+## Completing an assembly in simulation
+
+To verify that your assembly process is configured correctly, run the simulation and observe:
+
+1. The feeder creates an assembly container and sub-components.
+2. The assembly station receives both types.
+3. Sub-components attach to the container one by one — you should see them snap into their slot positions in the 3D viewport.
+4. The completed assembly moves to the sink.
+
+<Warning>
+If sub-components attach in the wrong order or at incorrect positions, check the **assembly step order** in the Assembly Editor and verify that the slot positions were saved correctly. Slot positions are defined in the local coordinate frame of the assembly geometry, not the world frame.
+</Warning>
+
+## Modifying slot index order
+
+By default, slots are filled in the order they were added in the Assembly Editor. You can change the index order by dragging steps in the Steps list. This is useful when the physical build sequence differs from the order the slots were created — for example, when sub-components are added from alternating sides of a pallet.

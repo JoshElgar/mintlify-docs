@@ -1,0 +1,110 @@
+---
+title: "Handle Simulation Events with Python Hooks"
+description: "Use Python event handlers in Visual Components to respond to simulation start, stop, pause, signal changes, and component events during runtime."
+---
+
+Event handlers let your Python scripts react to things that happen during the simulation rather than running in a simple top-to-bottom sequence. Visual Components fires events at key moments — when the simulation starts or stops, when a signal changes value, or when a component property is modified — and you can attach Python functions to those events to run custom logic automatically.
+
+## Simulation-level event hooks
+
+Every component script can define a set of reserved function names that Visual Components calls automatically at simulation lifecycle points:
+
+```python
+from vcScript import *
+
+def OnStart():
+    """Called once when the simulation starts."""
+    print("Simulation started")
+
+def OnStop():
+    """Called when the simulation is reset/stopped."""
+    print("Simulation stopped")
+
+def OnPause():
+    """Called when the simulation is paused."""
+    print("Simulation paused")
+
+def OnResume():
+    """Called when the simulation resumes from pause."""
+    print("Simulation resumed")
+
+def OnRun():
+    """Main execution loop — runs continuously while simulation is active."""
+    sim = getSimulation()
+    while True:
+        delay(1.0)  # Wait 1 simulation second
+        print(f"Sim time: {sim.SimTime:.1f}s")
+```
+
+<Note>
+  `OnRun()` is the main script body and runs as a coroutine. Use `delay()` inside it to yield control back to the simulation and avoid blocking.
+</Note>
+
+## Signal event handlers
+
+To run code whenever a signal changes value, register a handler using `addEventHandler()`:
+
+```python
+from vcScript import *
+
+def OnStart():
+    comp = getComponent()
+    signal = comp.findBehaviour('ConveyorRunning')
+    signal.addEventHandler(onSignalChanged)
+
+def onSignalChanged(signal):
+    if signal.Value:
+        print("Conveyor started")
+    else:
+        print("Conveyor stopped")
+```
+
+The handler function receives the signal object as its argument. You can read `.Value` to get the new value.
+
+## Property change handlers
+
+You can also respond to changes in component properties:
+
+```python
+from vcScript import *
+
+def OnStart():
+    comp = getComponent()
+    prop = comp.getProperty('Speed')
+    prop.addEventHandler(onSpeedChanged)
+
+def onSpeedChanged(prop):
+    print(f"Speed changed to: {prop.Value}")
+```
+
+## Application-level events
+
+From an add-on or application script, you can subscribe to broader application events using the application context:
+
+```python
+from vcScript import *
+
+def OnStart():
+    app = getApplication()
+    app.addEventHandler('OnLayoutOpened', onLayoutOpened)
+    app.addEventHandler('OnComponentAdded', onComponentAdded)
+
+def onLayoutOpened(layout):
+    print(f"Layout opened: {layout.Name}")
+
+def onComponentAdded(comp):
+    print(f"Component added: {comp.Name}")
+```
+
+## Removing event handlers
+
+Always remove handlers you no longer need to avoid memory leaks or duplicate calls:
+
+```python
+signal.removeEventHandler(onSignalChanged)
+prop.removeEventHandler(onSpeedChanged)
+```
+
+<Tip>
+  Remove handlers inside `OnStop()` to clean up when the simulation resets, especially if you re-register them in `OnStart()`.
+</Tip>

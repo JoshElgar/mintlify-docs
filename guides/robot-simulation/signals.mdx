@@ -1,0 +1,256 @@
+---
+title: "Configure Robot I/O Signals in Visual Components"
+description: "Create digital, integer, and real signals, assign them to I/O groups, and use signals to trigger grasp, release, and tool change actions in Visual Components."
+---
+
+Signals are how robot programs communicate with the rest of the workcell — sensors, grippers, conveyors, PLCs, and other robots. In Visual Components 5.0, you create signals on individual components, connect them to the robot's I/O groups, and then reference them in robot program statements to send outputs and wait for inputs. Signals also drive simulation actions like grasping a part, releasing it, or mounting/dismounting a tool.
+
+## Signal types
+
+Visual Components supports three signal data types for robot I/O:
+
+| Type | Values | Typical use |
+|---|---|---|
+| **Boolean (digital)** | 0 or 1 | Gripper open/close, sensor triggered, conveyor enable |
+| **Integer** | Whole numbers | Part count, pallet position index, recipe number |
+| **Real** | Floating-point numbers | Analog sensor readings, force values, speed references |
+
+## Creating signals on a component
+
+Every component in the simulation can have its own signals. Grippers, conveyors, and sensors typically come with predefined signals. You can also add custom signals to any component.
+
+<Steps>
+  <Step title="Select the component">
+    Click the component (for example, the gripper or conveyor) in the 3D world.
+  </Step>
+  <Step title="Open the component properties">
+    In the properties panel, go to the **Signals** or **I/O** tab. Existing signals are listed here with their current values.
+  </Step>
+  <Step title="Add a new signal">
+    Click **Add Signal** (or the **+** button). Enter a name, select the type (Boolean, Integer, or Real), and set an initial value. For input signals (signals the robot reads), leave the direction as **Input**. For output signals (signals the robot writes), set it to **Output**.
+  </Step>
+</Steps>
+
+<Note>
+Signal names must be unique within a component but can repeat across different components. When you reference a signal in a robot program statement, you choose the component and signal name together.
+</Note>
+
+## Connecting component signals to the robot's I/O groups
+
+The robot controller has I/O groups — named collections of signals that the robot program can read and write. To use a component's signal in a robot program, you connect it to one of these groups.
+
+<Steps>
+  <Step title="Open the robot's I/O configuration">
+    Select the robot and go to the **Signals** tab in the robot controller panel. The I/O groups appear here (typically named **GI/GO** for general input/output, **DI/DO** for digital, etc.).
+  </Step>
+  <Step title="Connect the component signal">
+    Click the **Connect Signals** tab or use **Robot > Connect Signals**. A panel shows the robot's I/O ports on one side and available component signals on the other. Drag a component signal onto an open robot I/O port to connect them.
+
+    Alternatively, right-click an I/O port and select **Connect** to browse for the signal.
+  </Step>
+  <Step title="Verify the connection">
+    After connecting, the signal value from the component appears in the robot's I/O display. Toggle the component signal manually to confirm the robot I/O port updates.
+  </Step>
+</Steps>
+
+<Tip>
+Use the **Connect Signals** tab to view all signal connections in the layout at once. This gives you a clear picture of which robot ports are connected to which component signals before you start programming.
+</Tip>
+
+## Adding new I/O groups
+
+If the default I/O groups do not have enough ports for your application, you can add new groups.
+
+<Steps>
+  <Step title="Open the I/O group configuration">
+    Select the robot, go to the **Signals** tab, and click **Add Group** or **Manage I/O Groups**.
+  </Step>
+  <Step title="Define the new group">
+    Enter a name for the group and select the signal type (Boolean, Integer, or Real). Set the number of ports in the group.
+  </Step>
+  <Step title="Reference the group in the program">
+    New I/O groups appear in the signal dropdown menus in **Set Signal** and **Wait Signal** statements. Reference them by the group name and port index.
+  </Step>
+</Steps>
+
+## Sending signals from the robot program
+
+Use **Set Signal** statements to write values to output signals during program execution. This is how you command gripper open/close, start conveyors, or trigger other equipment.
+
+```
+// Close the gripper
+Set Signal GripperOutput = 1
+
+// Wait for the gripper to confirm closed
+Wait Signal GripperClosed == 1
+
+// Move to the place position
+Path: PlacePosition
+
+// Open the gripper
+Set Signal GripperOutput = 0
+```
+
+In the statement properties:
+- **Signal name** — the name of the robot I/O port (which you connected to a component signal)
+- **Value** — the value to write (0/1 for Boolean, any integer or real for other types)
+
+## Waiting for signals
+
+Use **Wait Signal** statements to pause robot program execution until an input signal reaches a target value. This synchronizes the robot with sensors, other machines, or PLC handshakes.
+
+```
+// Wait until a part arrives at the pickup station
+Wait Signal PartPresent == 1
+
+// Wait until the downstream machine is ready
+Wait Signal MachineReady == 1
+```
+
+<Note>
+By default, **Wait Signal** pauses indefinitely. In production simulations, consider adding a **Timeout** parameter to model fault conditions where a signal never arrives.
+</Note>
+
+## Using signals as condition variables
+
+Signals can appear directly in **If** statement conditions, letting you branch program logic based on real-time I/O state.
+
+```
+If PartType == 2 Then
+    Call Routine PlaceOnConveyorB
+ElseIf InputSignal_DefectDetected == 1 Then
+    Call Routine RejectPart
+Else
+    Call Routine PlaceOnConveyorA
+End If
+```
+
+You can combine multiple signal conditions with `and` / `or`:
+
+```
+If PartPresent == 1 and GripperReady == 1 Then
+    Call Routine PickPart
+End If
+```
+
+## Signal-triggered grasp actions
+
+The most common use of signals in robot simulation is controlling grasp and release — the simulation mechanism that attaches a part to the robot (pick) and detaches it (place). You configure grasp and release actions in the component's **Signal Actions** panel.
+
+<Steps>
+  <Step title="Open Signal Actions on the gripper or tool">
+    Select the gripper component and go to its **Signal Actions** tab (sometimes labeled **Actions** or **Grasp/Release**).
+  </Step>
+  <Step title="Add a Grasp action">
+    Click **Add Action > Grasp**. Configure:
+    - **Trigger signal** — the output signal from the robot that activates the grasp (for example, `GripperOutput == 1`)
+    - **Tool frame** — which tool frame defines the grasp point (the TCP that must be near the part when the signal fires)
+    - **Detection method** — **Volume detection** (any part within a bounding box around the TCP is grasped) or **Name detection** (only parts with a specific name are grasped)
+  </Step>
+  <Step title="Add a Release action">
+    Click **Add Action > Release**. Configure:
+    - **Trigger signal** — the signal that releases the part (for example, `GripperOutput == 0`)
+    - **Release direction** — the direction gravity acts on the released part (or **None** to leave it in place)
+  </Step>
+  <Step title="Test the grasp and release">
+    Run the simulation and observe that the part attaches to the robot when the grasp signal fires and detaches when the release signal fires.
+  </Step>
+</Steps>
+
+<Tip>
+Set the **volume detection size** in the grasp action to match the physical size of the gripper opening. If the volume is too large, the robot may accidentally grasp parts it should not. If it is too small, the robot may fail to grasp even when properly positioned.
+</Tip>
+
+## Grasping multiple objects simultaneously
+
+Some gripper designs (plate grippers, magnetic lifters, vacuum arrays) pick up several parts at once. Visual Components supports this through the **Grasp Multiple** mode.
+
+<Steps>
+  <Step title="Set the grasp mode to Multiple">
+    In the Signal Actions panel, change the **Grasp Mode** from **Single** to **Multiple**.
+  </Step>
+  <Step title="Define volume detection for each pickup point">
+    If the gripper has several pickup positions (for example, a four-suction-cup gripper), add a grasp action for each position with its own detection volume centered on that suction cup.
+  </Step>
+  <Step title="Teach the pick position carefully">
+    With multiple-object grasping, the TCP position must bring all detection volumes into contact with their respective parts simultaneously. Jog the robot to the correct position and verify all parts fall within their volumes before teaching the point.
+  </Step>
+</Steps>
+
+## Mounting and dismounting tools with signals
+
+In applications with automatic tool changers, the robot mounts and dismounts end-of-arm tools during the simulation cycle. This is controlled by **Mount** and **Dismount** signal actions rather than manual drag-and-drop.
+
+<Steps>
+  <Step title="Add a Dismount action to the tool">
+    Select the tool and go to its **Signal Actions** tab. Add a **Dismount** action triggered by a robot output signal (for example, `ToolChange == 0`). Configure the release position — where the tool goes after dismounting (a tool stand or rack).
+  </Step>
+  <Step title="Add a Mount action">
+    Add a **Mount** action to the same tool triggered by the opposite signal (for example, `ToolChange == 1`). Configure the TCP that the robot uses to pick up the tool.
+  </Step>
+  <Step title="Program the tool change sequence">
+    In the robot program, add:
+    ```
+    Path: ApproachToolStand
+    Set Signal ToolChange = 0    // release current tool
+    Delay 0.5
+    Path: RetractFromTool
+    Path: ApproachNewTool
+    Set Signal ToolChange = 1    // mount new tool
+    Delay 0.5
+    Path: RetractWithTool
+    ```
+  </Step>
+</Steps>
+
+<Note>
+After mounting a new tool, add a **Define Tool** statement to switch the active tool frame to the newly mounted tool's TCP. This ensures subsequent motion points use the correct frame.
+</Note>
+
+## Tracing robot motion with signals
+
+The **Trace** action lets you draw the TCP path as a colored line in the 3D world during simulation. This is useful for visualizing coverage in painting, welding, or sealing applications.
+
+You can turn tracing on and off from the robot program using a **Set State** statement or a dedicated trace signal action. When tracing is active, the robot leaves a colored line that shows exactly where the TCP traveled.
+
+<Steps>
+  <Step title="Enable tracing in the tool's actions">
+    Select the welding torch or painting gun and add a **Trace** action. Configure the trigger signal (for example, `WeldOn == 1` starts tracing, `WeldOn == 0` stops it).
+  </Step>
+  <Step title="Set the trace color and offset">
+    Choose a color that contrasts with the workpiece surface. If the TCP is at the contact point, set a small Z-axis offset so the trace line is visible above the surface.
+  </Step>
+  <Step title="Use Set Signal in the program">
+    In the robot program, set the weld/trace signal before the process path and clear it after:
+    ```
+    Set Signal WeldOn = 1
+    Path: WeldSeam
+    Set Signal WeldOn = 0
+    ```
+  </Step>
+</Steps>
+
+## Signals in multi-robot cells
+
+When two or more robots share a workspace, signals provide the handshake mechanism that prevents collisions. One robot sets an output signal when it enters a shared zone; the other robot checks that signal before entering.
+
+```
+// Robot 1 enters shared zone
+Set Signal Robot1_InZone = 1
+// ... do work in zone ...
+Set Signal Robot1_InZone = 0
+
+// Robot 2 waits before entering
+Wait Signal Robot1_InZone == 0
+Set Signal Robot2_InZone = 1
+// ... do work in zone ...
+Set Signal Robot2_InZone = 0
+```
+
+Connect `Robot1_InZone` as an output on Robot 1 and an input on Robot 2 (and vice versa) using the **Connect Signals** interface.
+
+## Next steps
+
+- [Teach robot positions](/guides/robot-simulation/robot-teaching) — jog the robot and capture pick and place positions with signals configured
+- [Write robot programs](/guides/robot-simulation/robot-programming) — build complete programs using Set Signal, Wait Signal, and If statement logic
+- [Check robot reachability](/guides/robot-simulation/reachability) — verify all signal-triggered positions are within the robot's working envelope

@@ -1,0 +1,152 @@
+---
+title: "Robot Simulation in Visual Components: Getting Started"
+description: "Add robots from the eCatalog, mount tools, connect external axes, and use the robot controller panel to jog and position robots in Visual Components."
+---
+
+Robot simulation in Visual Components 5.0 lets you build, program, and validate robotic workcells entirely in a digital environment before committing to physical hardware. You can add any robot from the built-in eCatalog, attach end-of-arm tools, connect the robot to positioners or linear tracks, and jog it interactively to verify reach and motion — all without writing a single line of code.
+
+## Key concepts
+
+Before you start building a robotic cell, it helps to understand the fundamental coordinate frames and motion types that govern how a robot moves.
+
+<CardGroup cols={2}>
+  <Card title="Joint positions" icon="sliders">
+    Each robot axis is represented as a joint angle (rotary) or linear displacement. Joint-space motion (point-to-point) moves each axis independently and takes the fastest path between configurations.
+  </Card>
+  <Card title="Cartesian positions" icon="arrows-up-down-left-right">
+    TCP (Tool Center Point) positions describe where the robot's tool is in 3D space (X, Y, Z) and how it is oriented (Rx, Ry, Rz). Linear motion moves the TCP in a straight line in Cartesian space.
+  </Card>
+  <Card title="Base frames" icon="house">
+    The robot world frame is the origin of all positions in the robot program. Base frames let you offset this origin — for example, to align it with a fixture or a moving positioner.
+  </Card>
+  <Card title="Tool frames" icon="wrench">
+    A tool frame defines the TCP relative to the robot flange. Every robot has a default tool frame at the flange center; you can add named tool frames for each end effector you mount.
+  </Card>
+</CardGroup>
+
+## Adding a robot from the eCatalog
+
+The eCatalog contains hundreds of robots from leading manufacturers. You can search by reach, payload, or brand and drag the robot directly into the 3D world.
+
+<Steps>
+  <Step title="Open the eCatalog">
+    On the **Home** tab, click **eCatalog**. The catalog panel opens on the left side of the screen.
+  </Step>
+  <Step title="Search for a robot">
+    Type a robot model name or manufacturer in the search box, or browse the **Robots** category. You can filter by reach and payload to narrow results.
+  </Step>
+  <Step title="Add the robot to the layout">
+    Drag the robot from the catalog into the 3D world, or double-click it. The robot appears at the origin. Use the move and rotate handles to position it in your cell.
+  </Step>
+  <Step title="Select the robot to open its controller">
+    Click the robot in the 3D world. The **Robot Controller** panel appears at the bottom of the screen, giving you access to the program, joints, and jog controls.
+  </Step>
+</Steps>
+
+<Tip>
+If you need a generic articulated robot without a specific manufacturer, search for **Generic Robot** in the eCatalog. Generic robots are useful for early-stage layout planning before a purchasing decision is made.
+</Tip>
+
+## Mounting a tool on the robot
+
+End-of-arm tools — grippers, welding torches, suction cups — attach to the robot flange using the mount interface.
+
+<Steps>
+  <Step title="Add the tool from the eCatalog">
+    Search for the tool component in the eCatalog and drag it into the layout. Place it near the robot.
+  </Step>
+  <Step title="Use Plug and Play (PnP) to mount">
+    Drag the tool onto the robot's flange connector. Visual Components detects the compatible interface and snaps the tool into place. The tool frame updates automatically.
+  </Step>
+  <Step title="Verify the tool frame">
+    In the **Robot Controller** panel, switch to the **Program** tab and check that the active tool frame points to the tip of your tool. If you need to adjust it, add a **Define Tool** statement to your program.
+  </Step>
+</Steps>
+
+<Note>
+You can also mount tools programmatically during simulation using **Mount** and **Dismount** signal actions. This lets you simulate automatic tool changers where the robot picks up different tools from a rack.
+</Note>
+
+## Connecting external axes
+
+Positioners and linear tracks extend the robot's reach and working envelope. Visual Components connects them as external axes, meaning the robot controller coordinates their motion with the robot's own joints.
+
+<Steps>
+  <Step title="Add a positioner or track">
+    Find the component in the eCatalog (search for **positioner**, **turntable**, or **linear track**) and place it in the layout.
+  </Step>
+  <Step title="Connect using the Interfaces command">
+    Select the robot, then click **Interfaces** on the **Robot** tab. Choose the external axis component from the list. Visual Components creates a logical connection so the robot controller can command the additional axes.
+  </Step>
+  <Step title="Verify the connection">
+    In Jog mode, the external axis values appear alongside the robot's joint values. You can jog the positioner directly from the controller panel.
+  </Step>
+</Steps>
+
+<Tip>
+When you use a positioner as an external axis, motion points in the robot program store both the robot joint values and the positioner angle at the moment the position was taught. This ensures exact repeatability during simulation.
+</Tip>
+
+## The robot controller panel
+
+The controller panel is your primary interface for interacting with a robot. Select any robot in the 3D world to open it.
+
+<Tabs>
+  <Tab title="Program tab">
+    The **Program** tab shows the robot's program tree — routines, statements, and motion points. You can add statements by right-clicking in the tree, and you can jog the robot to a target position before teaching it.
+  </Tab>
+  <Tab title="Joints tab">
+    The **Joints** tab shows the current angle of each robot axis and lets you type exact values. Use this tab to inspect robot configurations and check joint limits.
+  </Tab>
+  <Tab title="Properties tab">
+    The **Properties** tab exposes robot-specific settings: maximum speed, acceleration, robot configuration rules, and the active tool and base frame assignments.
+  </Tab>
+</Tabs>
+
+## Jog mode
+
+Jog mode lets you move the robot manually in the 3D world without running a simulation. It is the fastest way to position the robot for teaching new motion points.
+
+To enter Jog mode, select the robot and click the **Jog** button in the controller panel, or press **J** as a keyboard shortcut. A set of arrow handles appears at the robot's TCP. You can:
+
+- **Drag the TCP handles** to move the robot in Cartesian space (X, Y, Z translation and rotation)
+- **Switch to joint jog** in the Joints tab and drag individual axis sliders to move joints independently
+- **Type a target position** in the coordinate fields and press Enter to move the TCP to an exact location
+
+<Warning>
+Jog mode does not check for collisions by default. If you move the robot into an obstacle, the robot model penetrates the geometry visually. Use the **Collision Detection** tool to verify clearances after positioning.
+</Warning>
+
+## Robot configurations
+
+An articulated robot can usually reach the same TCP position in several different arm postures, called configurations. Each configuration has a name (for example, **front/back**, **up/down**, **flip/noflip**). When you teach a motion point, the current configuration is stored along with the position. If two consecutive points have incompatible configurations, the robot may make an unexpected large motion between them.
+
+<Tip>
+Use the **Configuration** column in the motion statement properties to review and change the stored configuration for each point. Keeping consistent configurations across a path reduces cycle time and avoids singularity.
+</Tip>
+
+## Robot singularity
+
+A singularity occurs when two or more robot axes align, causing the robot to lose a degree of freedom. The most common types are:
+
+- **Wrist singularity** — joint 5 (the middle wrist axis) is at or near 0°, causing joints 4 and 6 to compete for the same motion
+- **Overhead (shoulder/polar) singularity** — the TCP is directly above the robot base, along the axis of joint 1
+
+When the robot passes through a singularity during linear motion, it can produce large, fast joint movements. Avoid singularity by adjusting approach positions or switching to joint-space (point-to-point) motion through the singular region.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Teach robot positions" href="/guides/robot-simulation/robot-teaching">
+    Learn how to interactively jog the robot and capture motion points using the teaching panel.
+  </Card>
+  <Card title="Write robot programs" href="/guides/robot-simulation/robot-programming">
+    Build complete pick-and-place or process programs using statements, variables, and subprograms.
+  </Card>
+  <Card title="Check reachability" href="/guides/robot-simulation/reachability">
+    Verify that your robot can reach all required target positions without joint limit violations.
+  </Card>
+  <Card title="Offline programming" href="/guides/robot-simulation/offline-programming">
+    Generate robot paths automatically from CAD geometry and export them to real controllers.
+  </Card>
+</CardGroup>

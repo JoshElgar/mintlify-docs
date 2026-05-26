@@ -1,0 +1,261 @@
+---
+title: "Physics Simulation with Rigid Bodies and Colliders"
+description: "Configure physics entities, colliders, and material properties for rigid body simulation, and build physics-driven conveyors and sensors."
+---
+
+Visual Components 5.0 includes a physics engine that simulates gravity, friction, collisions, and joint forces in real time. Physics-driven components let you model scenarios that are difficult or impossible with purely kinematic simulation—gravity feeders, parts tumbling off a belt, stacking behavior in a container, or a component pushed out of alignment by an unexpected force.
+
+## Core concepts
+
+The physics system is built on three types of objects that work together:
+
+- **PhysicsEntity** — marks a node as a rigid body that participates in physics simulation
+- **PhysicsCollider** — defines the collision shape used to detect contact with other physics bodies
+- **Physical material** — sets the mass density, friction coefficients, restitution, and damping that govern how a body behaves when it contacts other objects
+
+You configure all three through behaviors added to nodes in the Component Graph.
+
+## Physics entity types
+
+When you add a **PhysicsEntity** behavior to a node, you choose one of four physics types:
+
+<Tabs>
+  <Tab title="Dynamic">
+    The body is fully simulated: gravity pulls it down, contacts push it aside, and forces accelerate it. Use this for products (parts, boxes, bottles) that should tumble, roll, and stack naturally.
+  </Tab>
+  <Tab title="Kinematic">
+    The body participates in collision detection but is moved by script or joint commands rather than by physics forces. Other dynamic bodies react to it, but it is not itself affected by gravity or impacts. Use this for robot links, conveyor belts, and any mechanism you control programmatically.
+  </Tab>
+  <Tab title="Static">
+    The body never moves. It acts as an immovable obstacle that dynamic bodies collide with. Use this for floors, walls, chutes, and guide rails.
+  </Tab>
+  <Tab title="Container (trigger)">
+    A volume that detects when dynamic bodies enter or exit without physically blocking them. Use this for bin-full sensors, counting zones, or logical regions.
+  </Tab>
+</Tabs>
+
+<Note>
+  A node must have a **PhysicsCollider** as well as a **PhysicsEntity** for physics interactions to work. Without a collider, the entity has no shape for the physics engine to detect, and objects will fall through it.
+</Note>
+
+## Adding physics entities and colliders
+
+<Steps>
+  <Step title="Select the target node">
+    In the Component Graph, select the node whose geometry should participate in physics. For a product component, this is usually the root node.
+  </Step>
+  <Step title="Add a PhysicsEntity behavior">
+    Right-click the node, choose **Add Behavior > PhysicsEntity**. Set the **PhysicsType** to Dynamic, Kinematic, Static, or Container as appropriate.
+  </Step>
+  <Step title="Add a PhysicsCollider behavior">
+    Right-click the same node, choose **Add Behavior > PhysicsCollider**. The collider shape options are:
+
+    - **Box** — axis-aligned bounding box; fastest, least accurate
+    - **Sphere** — sphere fit; good for round objects
+    - **Convex Hull** — tight convex approximation of the actual geometry; good accuracy, moderate performance
+    - **Mesh** — exact geometry; highest accuracy but expensive; avoid for dynamic bodies
+  </Step>
+  <Step title="Test the effect">
+    Run the simulation. Drop the component from above a static surface and verify that it lands and rests correctly. If it falls through, check that the static surface also has a collider.
+  </Step>
+</Steps>
+
+<Tip>
+  For most products (boxes, bottles, small parts), use **Convex Hull** as the collider type. It balances accuracy and performance well. Reserve **Mesh** colliders for static geometry like chutes where exact surface shape matters.
+</Tip>
+
+## Physical material properties
+
+Select a PhysicsEntity behavior and expand the **Material** section to configure:
+
+| Property | What it controls | Typical range |
+|---|---|---|
+| `Density` | Mass per unit volume (affects how hard objects push each other) | 0.001–10 kg/cm³ |
+| `StaticFriction` | Friction coefficient when the body is not moving | 0.1–1.0 |
+| `DynamicFriction` | Friction coefficient during sliding contact | 0.05–0.8 |
+| `Restitution` | Bounciness (0 = no bounce, 1 = perfectly elastic) | 0.0–0.5 for most industrial parts |
+| `LinearDamping` | Air resistance on linear velocity | 0.0–1.0 |
+| `AngularDamping` | Resistance to spinning | 0.0–1.0 |
+
+<Accordion title="Material density">
+  Density affects how the physics engine computes the body's mass from its collider volume. A steel box (density ≈ 7.8 kg/cm³) will push lighter plastic products (density ≈ 1.2 kg/cm³) out of the way on contact. Getting density approximately right produces realistic collision behavior without requiring exact values.
+</Accordion>
+
+<Accordion title="Static and dynamic friction">
+  Static friction determines whether a resting object starts to slide; dynamic friction determines how fast it decelerates once sliding. Set static friction higher than dynamic friction to model real materials. For reference: steel on steel ≈ 0.6 / 0.4; rubber on concrete ≈ 0.8 / 0.7; plastic on metal ≈ 0.35 / 0.25.
+</Accordion>
+
+<Accordion title="Restitution (bounciness)">
+  A restitution of 0 means objects stick on impact; 1.0 means they bounce back with no energy loss. Industrial parts on metal surfaces typically have restitution around 0.1–0.3. High restitution values (> 0.7) cause unrealistic bouncing that can destabilize the simulation.
+</Accordion>
+
+<Accordion title="Linear and angular damping">
+  Damping removes energy from moving bodies every simulation tick, preventing unrealistic perpetual motion. Increase linear damping for objects that should come to rest quickly (e.g., 0.5). Increase angular damping for objects that should not spin freely (e.g., 0.8 for a cardboard box).
+</Accordion>
+
+## Modeling a physics conveyor
+
+A physics conveyor uses the kinematic physics type to push dynamic products along a transport surface using friction—no path behavior is required.
+
+<Steps>
+  <Step title="Set belt surface to kinematic">
+    Add a **PhysicsEntity** to the belt surface node with `PhysicsType = Kinematic`.
+  </Step>
+  <Step title="Add a collider to the belt">
+    Add a **PhysicsCollider** with shape **Box** or **Mesh** to the belt surface. This gives the belt a collision surface that products can rest on.
+  </Step>
+  <Step title="Set belt velocity">
+    In the PhysicsEntity behavior, set the **Velocity** vector to the transport direction (e.g., `X=500, Y=0, Z=0` for 500 mm/s along X). The belt surface exerts a friction force on any dynamic body resting on it, pushing it in the velocity direction.
+  </Step>
+  <Step title="Add guide rails">
+    Model side rails as static physics entities to keep products on the belt and prevent them from falling off the edges.
+  </Step>
+  <Step title="Add products to test">
+    Place a few product components (Dynamic physics type, convex hull collider) at the belt input and run the simulation. They should be carried to the belt output by friction.
+  </Step>
+</Steps>
+
+<Warning>
+  Physics conveyors work differently from path-based conveyors. Products do not arrive precisely at a defined endpoint—they are subject to friction, collisions, and stacking. Use path conveyors when precise positioning matters; use physics conveyors when realistic physical behavior (e.g., piling up, spreading out) is more important.
+</Warning>
+
+## Modeling a physics feeder
+
+A physics feeder creates new components during simulation and releases them into the physics world, where gravity and friction govern their behavior.
+
+<Steps>
+  <Step title="Create the feeder geometry">
+    Model a hopper or chute as a static physics body. The inside surfaces should funnel parts toward the exit opening.
+  </Step>
+  <Step title="Add frames">
+    Place a frame node at the spawn point—the location where new parts will appear. Orient it so the Z axis points in the direction parts should initially travel (usually downward).
+  </Step>
+  <Step title="Add a ComponentCreator behavior">
+    Right-click the feeder's root node and add a **ComponentCreator** behavior. Set the **Component** property to the product component you want to create, and set the **CreationFrame** to the spawn frame you added.
+  </Step>
+  <Step title="Add a path for product registration">
+    Add a **OnePath** behavior and set it to the path going from the creation point downward. Newly created products register on this path initially, then physics takes over.
+  </Step>
+  <Step title="Add an interface">
+    Add an **Interface** behavior so the feeder connects to upstream components that trigger product creation.
+  </Step>
+  <Step title="Configure product physics">
+    The created product component must have **PhysicsEntity (Dynamic)** and a **PhysicsCollider** so it interacts with the feeder walls and other products correctly.
+  </Step>
+</Steps>
+
+## Volume sensor
+
+A volume sensor detects products that enter a defined 3D bounding region. It is the most common sensor type for detecting parts on conveyors, in bins, or approaching a workstation.
+
+<Steps>
+  <Step title="Add frames for the sensor volume">
+    In the Component Graph, add two frame nodes to define the sensor bounding box: `SensorStart` and `SensorEnd`. Position them to bracket the detection zone.
+  </Step>
+  <Step title="Add a VolumeSensor behavior">
+    Right-click the component node and add **Add Behavior > VolumeSensor**. Set the **StartFrame** and **EndFrame** properties to your two frame nodes.
+  </Step>
+  <Step title="Configure detection method">
+    Choose the detection method from the **TestMethod** dropdown:
+
+    | Method | Trigger condition |
+    |---|---|
+    | `Precise` | Actual geometry intersects the sensor volume (most accurate, slowest) |
+    | `BBoxIntersect` | Product bounding box intersects the sensor volume |
+    | `BBoxCenterInside` | Product bounding box center is inside the sensor volume |
+    | `BBoxCenterFullyInside` | Entire product bounding box is inside the sensor volume |
+  </Step>
+  <Step title="Add signal behaviors">
+    Add a **Boolean Signal** behavior called `PartDetected` (output). In the VolumeSensor properties, set `OutputSignal = PartDetected`.
+  </Step>
+  <Step title="Wire to logic">
+    In a Python script, react to the signal:
+
+    ```python
+    def OnSignal(signal):
+        if signal.Name == "PartDetected":
+            if signal.Value:
+                print("Part entered the sensor zone")
+            else:
+                print("Part left the sensor zone")
+    ```
+  </Step>
+</Steps>
+
+<Tip>
+  Use **Sampling** mode (poll-based, runs on every simulation tick) for precise position-dependent logic, and **Polling** mode (event-based, fires only on change) for general detect/release logic. Polling is more efficient for conveyors with large numbers of products.
+</Tip>
+
+## Raycast sensor
+
+A raycast sensor fires an invisible ray from a frame in a specified direction and detects the first object the ray intersects. It is the physics equivalent of a photoelectric or laser distance sensor.
+
+<Steps>
+  <Step title="Add a location frame">
+    Add a frame node to the sensor node and position it at the sensor's emission point. Orient it so the Z axis points in the direction the ray should travel.
+  </Step>
+  <Step title="Add a RaycastSensor behavior">
+    Right-click the node and add **Add Behavior > RaycastSensor**. Set `LocationFrame` to the frame you created.
+  </Step>
+  <Step title="Configure sensor parameters">
+    - `MaxRange` — maximum detection distance in mm; objects beyond this distance are not detected
+    - `DetectionContainer` — limit detection to products in a specific container (optional)
+  </Step>
+  <Step title="Add signal behaviors and connect">
+    Add **Boolean** and **Real** signal behaviors for `PartDetected` and `Distance`. Connect them to the sensor's output properties.
+  </Step>
+  <Step title="Use the sensor in a script">
+    ```python
+    def OnRun():
+        comp = getComponent()
+        sensor = comp.findBehavior("RaycastSensor")
+        dist_signal = comp.findBehavior("Distance")
+        
+        while True:
+            # Manual sample—use this when AutoSampling is off
+            sensor.sample()
+            if sensor.IsDetecting:
+                print("Object at", dist_signal.Value, "mm")
+            delay(0.1)
+    ```
+  </Step>
+</Steps>
+
+## Creating collision geometry
+
+For robot OLP applications, you need simplified collision geometry that the path solver can use for collision checking. The built-in **Create Collision Geometry** tool generates optimized collider shapes from existing visual geometry.
+
+<Steps>
+  <Step title="Select the robot or component">
+    Select the component whose collision geometry you want to create.
+  </Step>
+  <Step title="Open the tool">
+    Go to **Modeling > Create Collision Geometry**. The tool analyzes the visual geometry of each link.
+  </Step>
+  <Step title="Choose resolution">
+    Higher resolution produces more accurate collision shapes but increases path solver computation time. For most robot applications, the default medium resolution is a good balance.
+  </Step>
+  <Step title="Review collider visibility">
+    Enable **Show Colliders** in the tool options to review the generated shapes as transparent overlays on the visual geometry. Check that all significant protrusions are covered.
+  </Step>
+  <Step title="Adjust per-link">
+    If a particular link's auto-generated collider is too coarse, select that link and manually place a convex hull collider or primitive collider to better match the geometry.
+  </Step>
+</Steps>
+
+<Note>
+  Collision geometry created with the Create Collision Geometry tool is separate from physics simulation colliders. The former is used by the robot path solver for collision avoidance; the latter is used by the physics engine for rigid body dynamics. You may need both on different components.
+</Note>
+
+## Physics joints
+
+In addition to the distance and fixed joints covered in the joints section, the physics engine supports:
+
+| Joint type | Behavior |
+|---|---|
+| **Fixed** | Rigidly locks two bodies; can be broken by script |
+| **Distance** | Push-pull along an axis; supports soft limits for spring behavior |
+| **Hinge** | Rotation around a single axis with limits (equivalent to a revolute joint in the physics world) |
+| **Slider** | Linear travel along an axis (equivalent to a prismatic joint in the physics world) |
+
+Use physics joints when you want motion to be influenced by physics forces (gravity, impacts) in addition to controlled commands. For purely servo-driven motion, use kinematic One-DOF joints instead.

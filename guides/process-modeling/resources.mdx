@@ -1,0 +1,173 @@
+---
+title: 'Simulate Mobile Resources in Process Modeling'
+description: "Add and configure mobile resources — humans, AGVs, and forklifts — in Visual Components Process Modeling, including missions and navigation."
+---
+
+Resources are mobile entities that perform transport and assistance tasks in the simulation. Unlike static conveyor belts that move products automatically along their path, resources navigate the 3D environment independently to pick up, carry, and deliver products between processes. Visual Components supports several resource types — human workers, mobile robots (AMRs/AGVs), and forklifts — all managed through the same Process Modeling framework.
+
+<Note>
+Resources require Visual Components **Professional** or **Premium**. The PM Resources eCatalog folder contains all available resource components.
+</Note>
+
+## Resource types
+
+<CardGroup cols={2}>
+  <Card title="Human" icon="person">
+    Simulates a worker who walks between stations to load, unload, or assist with operations. Supports human animation states and ergonomic reach patterns.
+  </Card>
+  <Card title="Mobile robot (AMR/AGV)" icon="robot">
+    Autonomous mobile robot that navigates a defined area to transport products. Supports path planning, charging, and queuing at busy stations.
+  </Card>
+  <Card title="Forklift" icon="truck">
+    Larger vehicle for pallet and bulk transport. Configured similarly to a mobile robot but with different load patterns and approach geometry.
+  </Card>
+  <Card title="Custom resource" icon="wrench">
+    Any PM-compatible component you model yourself. Must implement the resource interface to receive tasks from the PM controller.
+  </Card>
+</CardGroup>
+
+## Adding a resource to the layout
+
+<Steps>
+  <Step title="Open the eCatalog">
+    In the **Home** tab, click **eCatalog** to open the component browser.
+  </Step>
+  <Step title="Navigate to PM Resources">
+    In the eCatalog, browse to the **PM** folder, then open **PM Resources**. You will see sub-folders for humans, mobile robots, and forklifts.
+  </Step>
+  <Step title="Drag the resource into the scene">
+    Drag the resource component from the eCatalog into the 3D scene. Place it in an open area — the resource will find its own paths to processes during simulation.
+  </Step>
+  <Step title="Add a PM Resource Controller">
+    Drag a **PM Resource Controller** component from the eCatalog into the scene. The controller manages task assignment for one or more resources of the same type.
+  </Step>
+  <Step title="Assign the resource to the controller">
+    Select the resource component and open its properties panel. In the **Controller** field, select the PM Resource Controller you added. Repeat for each resource that should share this controller.
+  </Step>
+</Steps>
+
+## General resource properties
+
+Each resource component exposes a set of properties in the properties panel that control its behavior during simulation.
+
+<AccordionGroup>
+  <Accordion title="Speed and motion">
+    - **Speed**: Maximum travel speed in meters per second.
+    - **Acceleration / Deceleration**: Ramp rates for realistic motion profiles.
+    - **Turn speed**: Angular velocity when changing direction.
+  </Accordion>
+  <Accordion title="Load capacity">
+    - **Max load**: Maximum number of products the resource can carry simultaneously.
+    - **Load geometry**: The visual representation of carried products (attach point on the resource model).
+  </Accordion>
+  <Accordion title="Approach positions">
+    Each PM station can define one or more **approach positions** — specific spots in the 3D scene where a resource must navigate before it can load or unload a product. Configure approach positions on the station component, not on the resource itself.
+  </Accordion>
+  <Accordion title="Idling behavior">
+    When a resource has no assigned tasks, it can:
+    - Stay at its last position (default)
+    - Return to a designated **home position**
+    - Patrol a defined route
+
+    Set the idle behavior under the **Idling** section of the resource properties.
+  </Accordion>
+  <Accordion title="Charging">
+    For electric mobile robots, enable the **Charging** feature and specify:
+    - **Battery capacity**: Total charge in watt-hours.
+    - **Discharge rate**: Energy consumed per meter traveled.
+    - **Charge station**: The PM Charge Station component in the scene.
+    - **Charge threshold**: Battery level at which the robot stops to recharge before accepting new tasks.
+  </Accordion>
+</AccordionGroup>
+
+## Navigation
+
+Resources use the built-in path planner to navigate around obstacles in the scene. You do not need to draw paths manually — the resource calculates routes dynamically during simulation.
+
+For layouts with narrow corridors or one-way aisles, use **PM Navigation** components to define traffic rules:
+
+- **PM Navigation Area**: Marks a region the resource can traverse. Resources do not enter areas that are not covered by a navigation area.
+- **PM Navigation Waypoint**: A point the resource must pass through, useful for creating deterministic routes in confined spaces.
+- **PM Traffic Controller**: Manages resource right-of-way at intersections and bottlenecks to prevent deadlocks.
+
+<Tip>
+Place navigation areas to cover the full floor area the resources need to travel. Resources outside a navigation area will not move to their target.
+</Tip>
+
+## Assigning transport links to a resource controller
+
+For a resource to carry products along a transport link, that link must be assigned to the resource's controller using the **Set Controller** tool.
+
+<Steps>
+  <Step title="Activate the Process tab">
+    Click the **Process** tab in the ribbon.
+  </Step>
+  <Step title="Click Set Controller">
+    Click the **Set Controller** button. The cursor changes to selection mode.
+  </Step>
+  <Step title="Click the transport link">
+    Select the link in the scene that the resource should service.
+  </Step>
+  <Step title="Click the PM Resource Controller">
+    Click the controller component. The link is now assigned — during simulation, the resource picks up products at the link's source and delivers them to the destination.
+  </Step>
+</Steps>
+
+## Missions
+
+Missions provide a structured way to define a resource's task sequence beyond the automatic assignments generated by the PM controller. A mission consists of an ordered list of steps — navigate, pick, place, wait — that the resource executes exactly as defined.
+
+Use missions when:
+- A resource must complete a specific sequence that the flow definition alone cannot express.
+- You need a resource to perform a recurring scheduled task (such as a waste collection run every 10 minutes).
+- Different resources in the same layout need different task sequences.
+
+### Creating a mission
+
+<Steps>
+  <Step title="Add a PM Mission Controller">
+    Drag a **PM Mission Controller** from the eCatalog into the scene. This component defines the mission steps.
+  </Step>
+  <Step title="Open the mission editor">
+    Select the mission controller and open its properties panel. Click **Edit Mission** to open the mission step editor.
+  </Step>
+  <Step title="Add steps">
+    Click **Add Step** to insert a task. Available step types include:
+    - **Navigate To**: Move to a specified location or component.
+    - **Pick**: Load a product from a source process.
+    - **Place**: Unload a product at a destination process.
+    - **Wait**: Pause for a duration or until a signal condition is met.
+  </Step>
+  <Step title="Set the mission activator">
+    Configure when the mission starts:
+    - **On simulation start**: The mission begins immediately when the simulation runs.
+    - **On signal**: The mission starts when a named signal reaches a specified value.
+    - **Recurring**: The mission repeats at a defined time interval.
+  </Step>
+  <Step title="Assign to a resource">
+    In the resource's properties panel, set the **Mission Controller** field to your new mission controller. The resource will execute this mission instead of (or in addition to) its automatic transport assignments.
+  </Step>
+</Steps>
+
+### Mission activators
+
+<AccordionGroup>
+  <Accordion title="Immediate start">
+    The resource executes the mission steps once at simulation start. Use this for initial positioning or a one-time delivery task.
+  </Accordion>
+  <Accordion title="Signal-triggered">
+    The resource waits for a named boolean signal to go true, then executes the mission. The signal can be sent by a process statement using **Send Signal**.
+  </Accordion>
+  <Accordion title="Recurring interval">
+    The resource repeats the mission at a fixed time interval. Use this for waste collection, replenishment, or scheduled inspections.
+  </Accordion>
+</AccordionGroup>
+
+## Load and unload assist patterns
+
+When a resource assists a human or robot during a load or unload operation, you can define **assist patterns** to control the exact positions and sequence:
+
+- **Load assist**: The resource arrives at a station and holds the product in a specific orientation while a robot or human performs an operation on it.
+- **Unload assist**: The resource holds a finished product at a handoff position while another agent picks it up.
+
+Configure assist patterns in the station's process properties under **Assist Positions**. Assign the resource controller that services the assist operation using the Set Controller tool.

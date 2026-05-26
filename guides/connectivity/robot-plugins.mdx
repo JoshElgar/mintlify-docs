@@ -1,0 +1,97 @@
+---
+title: "Robot Connectivity Plugins for Real Robot Brands"
+description: "Connect Visual Components to real robot controllers from ABB, FANUC, KUKA, Universal Robots, Yaskawa, Kawasaki, Denso, and more for virtual commissioning."
+---
+
+Robot connectivity plugins let you run a real robot controller in sync with your Visual Components simulation. Instead of simulating robot motion only in software, the plugin streams joint positions and I/O signals between the actual robot controller and the simulation in real time. This enables virtual commissioning, cycle time validation with real programs, and testing PLC-robot interactions before deploying on the shop floor.
+
+## Supported robot brands
+
+| Brand | Plugin | Supported connection |
+|---|---|---|
+| ABB | ABB Connectivity Plugin | IRC5, OmniCore via RobotWare |
+| FANUC | FANUC Connectivity Plugin | R-30iB, R-30iB Plus via FANUC SDK |
+| KUKA | KUKA.Sim Add-on | KRC4/KRC5 via KUKA.Sim Pro interface |
+| Universal Robots | UR RTDE | RTDE (Real-Time Data Exchange) protocol |
+| Yaskawa | Yaskawa Connectivity Plugin | DX100/DX200/YRC1000 |
+| Kawasaki | Kawasaki Connectivity Plugin | E/F/R controller series |
+| Denso | Denso Connectivity Plugin | RC8 series |
+| Techman | Techman Connectivity Plugin | TM series collaborative robots |
+| MELFA | MELFA Connectivity Plugin | Mitsubishi Electric CR series |
+| LS Electric | LS Electric Connectivity Plugin | LS Electric robot controllers |
+| Stäubli | VAL3 OLP | Stäubli CS9 via VAL3 program export/import |
+
+## General installation steps
+
+<Steps>
+  <Step title="Install the plugin">
+    Download the connectivity plugin for your robot brand from the [Visual Components downloads page](https://www.visualcomponents.com/downloads/) or via the eCatalog. Plugins are distributed as `.vcax` installer packages. Double-click the package to install it. Restart Visual Components after installation.
+  </Step>
+  <Step title="Add the robot to your layout">
+    Open eCatalog and search for your robot model by brand or model number. Drag the robot component into the 3D world. The robot must be the correct model to match the real controller — kinematics must match exactly.
+  </Step>
+  <Step title="Configure the connection">
+    Select the robot in the layout and open the **Connectivity** panel (available in the ribbon after the plugin is installed). Enter the controller IP address and any required port or authentication settings specific to your brand.
+  </Step>
+  <Step title="Connect and synchronize">
+    Click **Connect**. The plugin establishes a connection to the controller. Once connected, joint positions from the real controller are reflected in the simulation, and the simulation can send program or I/O commands back.
+  </Step>
+</Steps>
+
+<Warning>
+  Always ensure the real robot is in a safe state before connecting. Unexpected motion commands from the simulation could cause the robot to move. Use the controller's safety stop or reduced speed mode during initial testing.
+</Warning>
+
+## ABB robots
+
+The ABB Connectivity Plugin supports IRC5 and OmniCore controllers running RobotWare. It requires the **PC Interface** option to be enabled on the controller. Connection is made over Ethernet using the ABB Robot Communication Runtime.
+
+Key features:
+- Bidirectional joint position streaming
+- I/O signal read/write
+- Program execution control (start, stop, reset)
+
+## FANUC robots
+
+The FANUC Connectivity Plugin connects to R-30iB and R-30iB Plus controllers. The **FANUC PC Developer's Kit (PCDK)** must be installed on the PC running Visual Components.
+
+Key features:
+- Joint position monitoring
+- Register and I/O signal access
+- Program upload and execution
+
+## Universal Robots (RTDE)
+
+Universal Robots cobot connectivity uses the open **RTDE (Real-Time Data Exchange)** protocol built into UR controllers running PolyScope 3.3 or higher. No additional software license is required on the controller.
+
+Key features:
+- 125 Hz real-time joint position streaming
+- Read/write of registers and digital I/O
+- No proprietary SDK required
+
+## KUKA robots (KUKA.Sim Add-on)
+
+The KUKA integration uses the **KUKA.Sim Add-on** installed on the KRC controller. The add-on creates a direct interface between the KUKA robot interpreter and Visual Components over a local network.
+
+Key features:
+- Synchronized robot motion (SIM mode)
+- KRL program execution in the simulation
+- External axis support
+
+## Stäubli (VAL3 OLP)
+
+Stäubli robots are supported through **Offline Programming** rather than a live connection plugin. You write and validate programs in Visual Components, export them as VAL3 application files, and load them directly onto the CS9 controller. See [Offline Programming](/guides/robot-simulation/offline-programming) for the full workflow.
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Connection fails at startup">
+    Verify the controller IP address is correct and reachable (ping from the PC). Check that required ports are open in your firewall. Confirm that any required option (e.g., ABB PC Interface, FANUC PCDK) is licensed and active on the controller.
+  </Accordion>
+  <Accordion title="Robot moves unexpectedly during connection">
+    Always connect with the real robot in **reduced speed mode** or with its safety stop engaged during initial testing. Disconnect immediately if unexpected motion occurs and review your program and signal mappings.
+  </Accordion>
+  <Accordion title="Joint positions do not match between simulation and real robot">
+    Ensure you are using the exact same robot model in eCatalog as the real controller. Check that zero positions and joint conventions match. Some brands require a calibration or offset configuration step.
+  </Accordion>
+</AccordionGroup>

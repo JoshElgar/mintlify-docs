@@ -1,0 +1,119 @@
+---
+title: 'Define Products and Flows in Process Modeling'
+description: "Create product types, configure product geometry, introduce products via feeders, and set up flow groups with source and destination steps."
+---
+
+Products and flows are the foundation of every Process Modeling layout. A **product type** describes the item being manufactured — its name, 3D shape, and any custom properties the simulation needs to track. A **flow** defines the sequence of process steps that products of a given type must visit, from the feeder that creates them to the sink that consumes them. Setting up products and flows correctly is the first task when building a new layout.
+
+## Product types
+
+A product type is a template. When the simulation runs, the feeder instantiates copies of this template and sends them through the layout. Each instance carries the geometry and property values defined in the type.
+
+### Access the product type editor
+
+You open the product type editor from the **Process** tab of the properties panel when a PM component is selected. The editor lists all product types defined in the current layout and lets you add, remove, or modify them.
+
+<Tip>
+You can also access the product type editor by double-clicking any feeder component in the scene.
+</Tip>
+
+### Product type properties
+
+Each product type has the following properties:
+
+| Property | Description |
+| --- | --- |
+| **Name** | Identifies the product type throughout the layout. Use a descriptive name like `CylinderPart` or `BoxA`. |
+| **Geometry** | The 3D component from the scene that represents this product's shape. Select it from the component drop-down in the editor. |
+| **Flow group** | The flow group this product type belongs to. A product type can only belong to one flow group at a time. |
+| **Custom properties** | Additional numeric or string values attached to each product instance. Other statements and filters can read these at runtime. |
+
+<Note>
+A product type and its geometry component are separate objects. The geometry component defines what the product looks like; the product type defines how the simulation treats it. You can reuse the same geometry for multiple product types.
+</Note>
+
+### Create a new product type
+
+<Steps>
+  <Step title="Add a geometry component">
+    Import or place a 3D model in the scene that represents the part. This can be a built-in primitive or a custom CAD model. Give it a descriptive name in the scene graph.
+  </Step>
+  <Step title="Open the product type editor">
+    Select any PM component in the layout, open the **Process** tab in the properties panel, then click **Product Types**.
+  </Step>
+  <Step title="Add the product type">
+    Click **Add Product Type**. Enter a name and select the geometry component from the drop-down. The editor adds the new type to the list.
+  </Step>
+  <Step title="Configure custom properties">
+    If you need the simulation to track extra data per product (batch number, quality grade, and so on), add properties using the **Add Property** button. Set a name, type (integer, real, or string), and default value.
+  </Step>
+  <Step title="Assign to a flow group">
+    Select the flow group this product type belongs to, or create a new flow group (see below). Every product type must belong to exactly one flow group before it can move through the layout.
+  </Step>
+</Steps>
+
+## Flow groups
+
+A flow group organizes one or more product types into a shared sequence of process steps. All product types in the same flow group follow the same high-level route through the layout, though process statements can apply filters to treat each type differently at individual stations.
+
+### Create a new flow group
+
+<Steps>
+  <Step title="Open the flow editor">
+    Select a PM component, open the **Process** tab, and click **Flows**. The flow editor shows all existing flow groups and their step sequences.
+  </Step>
+  <Step title="Add the flow group">
+    Click **Add Flow Group** and give it a name. The editor creates an empty group with a placeholder source and destination.
+  </Step>
+  <Step title="Add process steps">
+    Click **Add Step** to insert a process step into the flow. Each step corresponds to a process running on a PM component in the scene. Select the target component from the drop-down that appears.
+  </Step>
+  <Step title="Order the steps">
+    Drag steps up and down in the list to define the sequence. Products always move through steps in the order shown.
+  </Step>
+  <Step title="Assign product types">
+    In the product type editor, assign each product type to this flow group. Products with no flow group assigned will not enter the flow.
+  </Step>
+</Steps>
+
+## Source and destination
+
+Every flow group needs a **source** and a **destination** to define where products enter and leave the flow.
+
+### Source
+
+The source is the first process step in the flow — typically the feeder. The feeder's **TransportOut** statement sends newly created products toward the first real process step. When you configure the TransportOut statement on the feeder, leave the destination set to **Next** so products automatically move to the first connected station.
+
+### Destination
+
+The destination is the final step — typically a sink process. The sink's **TransportIn** statement accepts products and removes them from the scene. You can set the source of the TransportIn statement to **Any** to accept products from any connected upstream process, or restrict it to a specific source component.
+
+<Note>
+The **Source** and **Destination** fields on transport statements refer to specific components or the special values **Any**, **Next**, and **Previous**. Using **Any** gives the simulation the most flexibility when routing products through buffers or alternative paths.
+</Note>
+
+### Introducing a new product into an existing flow
+
+If you need a new product type to enter the flow mid-way — for example, from a secondary feeder that feeds components to an assembly station — create a second flow group with its own feeder. The secondary flow's products become available to the assembly process when both flow groups are running simultaneously.
+
+<Steps>
+  <Step title="Import the new geometry">
+    Add the new part geometry to the scene.
+  </Step>
+  <Step title="Create the product type">
+    Open the product type editor and add a new type, selecting the new geometry.
+  </Step>
+  <Step title="Create a second flow group">
+    Add a new flow group in the flow editor. This group can share some process steps with the main flow, or have an entirely separate route.
+  </Step>
+  <Step title="Add a secondary feeder">
+    Drag a Source Feeder from the eCatalog (PM folder) into the scene. Configure it to feed the new product type.
+  </Step>
+  <Step title="Connect with transport links">
+    Draw a transport link from the secondary feeder to the target station. The assembly process at that station can then pull parts from both feeders.
+  </Step>
+</Steps>
+
+<Tip>
+When you move a product type from one flow group to another, all process step assignments for that type are reset. Plan your flow groups before assigning product types.
+</Tip>

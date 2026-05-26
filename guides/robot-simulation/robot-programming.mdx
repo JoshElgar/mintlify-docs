@@ -1,0 +1,217 @@
+---
+title: "Write and Manage Robot Programs in Visual Components"
+description: "Build robot programs using Path, Set Signal, Wait Signal, If/Else, and Delay statements. Add variables and synchronize multiple robots in Visual Components."
+---
+
+Visual Components 5.0 provides a statement-based robot programming environment that mirrors the structure of real robot controller languages. You build programs by inserting statements into routines, configuring their properties, and testing them directly in the 3D simulation. This approach is robot-brand agnostic — the same program structure works whether you are simulating an ABB, FANUC, KUKA, or any other robot, and you can export the result to vendor-specific formats for use on real hardware.
+
+## Program structure
+
+Every robot program contains at least one routine called **Main**. When the simulation runs, the robot executes Main from top to bottom, then loops back to the beginning (unless a stop condition is reached). You can create additional routines (subprograms) and call them from Main or from each other.
+
+<Note>
+The robot controller panel shows all routines for the selected robot. Click a routine name in the tree to expand it and view its statements. Click any statement to see its properties in the panel below the tree.
+</Note>
+
+## Statement reference
+
+### Path (motion)
+
+A **Path** statement defines where the robot moves. It contains one or more motion points, each with its own motion type, speed, and frame settings.
+
+| Property | Description |
+|---|---|
+| **Motion Type** | Joint (fastest path), Linear (straight line), or Circular (arc through three points) |
+| **Speed** | TCP speed for linear/circular, or axis speed percentage for joint motion |
+| **Acceleration** | Scaling factor for acceleration and deceleration |
+| **Blending** | Radius (mm) within which the robot starts the next move before fully stopping at this point |
+| **Tool** | Active tool frame for this point (overrides the Define Tool setting if specified) |
+| **Base** | Active base frame for this point |
+| **External Axes** | Values for any connected positioner or track axes |
+| **Configuration** | Robot arm posture (e.g., front/back, up/down, flip/noflip) |
+
+<Tip>
+Setting a non-zero **Blending** radius lets the robot flow smoothly through a sequence of points instead of stopping at each one. Use blending for approach and retract moves to reduce cycle time.
+</Tip>
+
+### Define Tool
+
+A **Define Tool** statement sets the active tool frame for all subsequent motion statements in the routine. Place it before the first move that uses a new TCP.
+
+You can configure the tool frame to:
+- Use a **fixed offset** from the robot flange
+- **Attach to a component node** — the TCP follows the component as it moves (useful when the robot is carrying a part and needs to treat a feature on the part as the TCP)
+
+### Define Base
+
+A **Define Base** statement changes the active base frame. All motion points taught after this statement are interpreted relative to the new base.
+
+Use Define Base to:
+- Align the robot's coordinate system with a fixture or pallet
+- **Increment a base frame** by a fixed offset to stack or array positions without reteaching each one
+- **Attach a base to a positioner** so that programmed positions follow the positioner angle
+
+### Set Signal
+
+A **Set Signal** statement writes a value to an output signal during program execution. This is how you command a gripper to open or close, start a conveyor, or trigger an external device.
+
+```
+Set Signal GripperClose = 1    // close the gripper
+Set Signal GripperClose = 0    // open the gripper
+```
+
+Signal names are the names you assign when creating signals in the robot's I/O configuration. You can set digital (0/1), integer, or real-valued signals.
+
+### Wait Signal
+
+A **Wait Signal** statement pauses program execution until an input signal reaches a target value. Use it to synchronize the robot with sensors, PLCs, or other simulation components.
+
+```
+Wait Signal PartPresent == 1       // wait until sensor detects a part
+Wait Signal ConveyorReady == 1     // wait until conveyor signals ready
+```
+
+You can add a **Timeout** property so the robot does not wait indefinitely — if the signal does not arrive within the timeout period, execution continues or branches to an error handler.
+
+### If / ElseIf / Else
+
+Conditional statements let the robot execute different code paths depending on signal values, variables, or component properties.
+
+```
+If PartType == 1 Then
+    Call Routine PlaceOnConveyorA
+ElseIf PartType == 2 Then
+    Call Routine PlaceOnConveyorB
+Else
+    Call Routine RejectPart
+End If
+```
+
+You can nest If statements and combine multiple conditions using `and` / `or` operators. Conditions can reference:
+
+- Signal input values
+- Robot program variables
+- Any component property exposed in the simulation (by name)
+
+### Delay
+
+A **Delay** statement suspends execution for a fixed time in seconds. Use it to wait for a gripper to physically open or close, or to give a downstream process time to respond.
+
+```
+Set Signal GripperClose = 1
+Delay 0.5    // wait 500 ms for gripper to close
+Path: Retract
+```
+
+### Comment
+
+A **Comment** statement adds a text note in the program tree. It has no effect during execution but helps document intent for other users.
+
+### Print
+
+A **Print** statement writes a message to the **Output Panel** during simulation. Use it to log variable values, trace execution flow, or display diagnostic information.
+
+```
+Print "Cycle count: " + cycleCount
+```
+
+### Set State
+
+A **Set State** statement changes the robot's operational state flag. This is used to communicate the robot's current activity to other components — for example, signaling that it is idle and ready to accept a new part.
+
+## Creating subprograms
+
+Subprograms (routines) let you reuse sequences of statements without duplicating them. A common pattern is to have Main call routines like `PickPart`, `PlacePart`, and `Home`.
+
+<Steps>
+  <Step title="Add a new routine">
+    In the **Program** tab, right-click the robot name at the top of the program tree and select **Add Routine**. Enter a name for the routine.
+  </Step>
+  <Step title="Add statements to the routine">
+    Click the routine to expand it, then right-click to add statements. Build the subprogram logic just as you would in Main.
+  </Step>
+  <Step title="Call the routine from Main">
+    In Main (or any other routine), right-click and select **Add Statement > Call Routine**. Choose your new routine from the dropdown. At runtime, the robot executes the called routine completely before returning to the calling routine.
+  </Step>
+  <Step title="Delete a routine">
+    Right-click the routine name and select **Delete**. Confirm the deletion. Any **Call Routine** statements referencing the deleted routine will show an error — update or remove them.
+  </Step>
+</Steps>
+
+## Adding and using robot variables
+
+Variables store values that change during simulation — counters, flags, offsets. The robot controller supports integer, real, and Boolean variable types.
+
+<Steps>
+  <Step title="Open the Variables tab">
+    In the robot controller panel, click the **Variables** tab (sometimes labeled **Data**). Existing variables are listed here.
+  </Step>
+  <Step title="Add a variable">
+    Click **Add Variable** (or the **+** button). Enter a name, select the type (Integer, Real, or Boolean), and optionally set an initial value.
+  </Step>
+  <Step title="Use the variable in statements">
+    Reference the variable by name in conditions, expressions, and Print statements. For example:
+    ```
+    cycleCount = cycleCount + 1
+    If cycleCount >= 10 Then
+        cycleCount = 0
+    End If
+    ```
+  </Step>
+</Steps>
+
+<Note>
+Variables reset to their initial values each time the simulation restarts. If you need persistent state between simulation runs, use component properties instead.
+</Note>
+
+## Synchronizing multiple robots
+
+When two or more robots work in the same cell, you need to coordinate their movements to avoid collisions and ensure correct sequencing. Visual Components provides a **Program Synchronize** statement for this purpose.
+
+<Steps>
+  <Step title="Add a Program Synchronize statement">
+    In each robot's program, at the point where they need to wait for each other, add **Add Statement > Program Synchronize**.
+  </Step>
+  <Step title="Link the sync points">
+    Give both sync statements the same **Sync ID** string. When the simulation runs, each robot pauses at its sync point and waits until all robots with the matching ID have also reached their sync point. Then all robots continue simultaneously.
+  </Step>
+</Steps>
+
+<Tip>
+Use sync statements at the beginning and end of a shared workspace region — the robot entering the workspace waits until the robot already there has exited.
+</Tip>
+
+## Exporting and importing programs
+
+You can export a robot program to a vendor-specific format and transfer it to a real robot controller, then re-import the modified program.
+
+<Steps>
+  <Step title="Export the program">
+    Select the robot, go to **Robot > Export Program**, and choose the target format (for example, KUKA KRL, ABB RAPID, Fanuc TP). Save the exported files to disk.
+  </Step>
+  <Step title="Import a program">
+    Select a robot, go to **Robot > Import Program**, and browse to the program file. Visual Components reads the motion points and creates corresponding Path statements in the robot's program tree.
+
+    After importing, verify that the tool frame and base frame assignments match the original program. You may need to update the **Tool** and **Base** references in the imported motion points.
+  </Step>
+</Steps>
+
+<Warning>
+Program import works best when the simulated robot model exactly matches the real robot model (same variant and software version). If the models differ, joint limits or TCP definitions may not transfer correctly.
+</Warning>
+
+## Reading the program tree
+
+The program tree gives you a compact view of the full program logic. Use the following shortcuts to navigate it efficiently:
+
+- **Click** a statement to select it and view its properties
+- **Double-click** a motion point to animate the robot to that position
+- **Drag** statements to reorder them within a routine
+- **Right-click** to access Cut, Copy, Paste, Delete, and Add Statement options
+- **Ctrl+Z** / **Ctrl+Y** to undo and redo changes
+
+## Next steps
+
+- [Configure I/O signals](/guides/robot-simulation/signals) — learn how to create signals and connect them to grasp and release actions
+- [Offline programming](/guides/robot-simulation/offline-programming) — generate paths automatically from CAD geometry and export to real controllers
+- [Check reachability](/guides/robot-simulation/reachability) — validate that programmed positions are within the robot's workspace

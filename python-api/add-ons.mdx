@@ -1,0 +1,163 @@
+---
+title: "Find, Install, and Use Python Add-ons"
+description: "Find Python add-ons for Visual Components in the eCatalog and community forums, install them as .vcax packages, and manage them in the Add-on Manager."
+---
+
+Python add-ons extend Visual Components with custom commands, panels, and automation workflows without requiring access to component source code. An add-on is packaged as a `.vcax` file—the same format used for components—so installing and sharing one is as simple as copying a file. The Visual Components community and eCatalog host a growing library of ready-made add-ons that you can use immediately.
+
+## What a Python add-on is
+
+A Python add-on is a Python package (a folder containing an `__init__.py` and one or more modules) bundled inside a `.vcax` archive. When Visual Components loads the add-on, it imports the package and registers whatever commands, panels, or event hooks the add-on declares. Add-ons run in the same Python 3 environment as component scripts and have full access to the `vcScript` API.
+
+Common things add-ons provide:
+- Custom ribbon commands (buttons in the toolbar)
+- Sidebar panels with custom UI
+- Automated layout analysis or reporting
+- Integration with external systems (ERP, MES, databases)
+- Batch operations that process multiple components
+
+## Finding Python add-ons
+
+### eCatalog
+
+The eCatalog is the primary source for verified add-ons:
+
+<Steps>
+  <Step title="Open the eCatalog">
+    In Visual Components, go to **Home** tab → **eCatalog** to open the component browser.
+  </Step>
+  <Step title="Search for add-ons">
+    Type a keyword in the search box (for example, "statistics export" or "CSV import"). Filter by **Category** → **Add-Ons** to show only add-on packages rather than simulation components.
+  </Step>
+  <Step title="Download">
+    Click an add-on to see its description and requirements, then click **Download** or **Add to layout**. The `.vcax` file downloads and installs automatically.
+  </Step>
+</Steps>
+
+### Visual Components forum
+
+The community forum hosts user-contributed add-ons that are not in the official eCatalog:
+
+<Steps>
+  <Step title="Visit the forum">
+    Go to the Visual Components forum (forum.visualcomponents.com) and browse the **Python API** and **Add-ons** categories.
+  </Step>
+  <Step title="Download the .vcax file">
+    Add-ons are typically attached to forum posts as `.vcax` files. Download the file to a local folder.
+  </Step>
+  <Step title="Install manually">
+    Follow the manual installation steps below.
+  </Step>
+</Steps>
+
+<Warning>
+Only install add-ons from sources you trust. A `.vcax` file can contain arbitrary Python code that runs with full access to your file system and network. Review the add-on's source code or confirm it comes from a trusted author before installing.
+</Warning>
+
+## Installing an add-on
+
+### Automatic installation (drag and drop)
+
+The easiest way to install a `.vcax` add-on is to drag the file directly into the Visual Components 3D world. Visual Components detects that it is an add-on (not a layout component) and installs it automatically. You may need to restart the application for the add-on's commands to appear in the ribbon.
+
+### Manual installation
+
+<Steps>
+  <Step title="Locate the add-ons folder">
+    Navigate to `%APPDATA%\Visual Components\Add-Ons\` (on Windows). If this folder does not exist, create it.
+  </Step>
+  <Step title="Copy the .vcax file">
+    Copy your `.vcax` file into the Add-Ons folder.
+  </Step>
+  <Step title="Restart Visual Components">
+    Close and reopen Visual Components. The add-on is loaded at startup.
+  </Step>
+</Steps>
+
+### Installing from a local folder
+
+Visual Components can also load add-ons from a shared network folder, which is useful for distributing add-ons across a team:
+
+<Steps>
+  <Step title="Open Options">
+    Go to **File** → **Options** → **Add-Ons**.
+  </Step>
+  <Step title="Add a folder">
+    Click **Add Folder** and enter the path to your shared folder. Visual Components loads all `.vcax` files from this folder at startup.
+  </Step>
+  <Step title="Apply and restart">
+    Click **OK** and restart Visual Components.
+  </Step>
+</Steps>
+
+## Managing installed add-ons
+
+### Add-on Manager
+
+The Add-on Manager shows all currently installed add-ons and lets you enable, disable, or remove them.
+
+<Steps>
+  <Step title="Open the Add-on Manager">
+    Go to **File** → **Add-ons** (or search for "Add-on Manager" in the command search).
+  </Step>
+  <Step title="Review installed add-ons">
+    The manager lists each add-on with its name, version, author, and enabled status. A green check indicates the add-on is active.
+  </Step>
+  <Step title="Enable or disable an add-on">
+    Click the toggle next to an add-on to enable or disable it without uninstalling. Disabling an add-on prevents it from loading at startup but keeps the file installed.
+  </Step>
+  <Step title="Uninstall an add-on">
+    Select an add-on and click **Uninstall** to remove it. If the add-on was installed to the shared folder, you need write access to that folder to remove it.
+  </Step>
+</Steps>
+
+## Using an installed add-on
+
+After installation, add-on commands typically appear in the ribbon under their own tab or in the **Add-Ons** tab. The add-on's documentation (usually in the forum post or eCatalog description) tells you where to find its commands and how to configure them.
+
+Some add-ons also add components to the eCatalog browser, or add context menu items that appear when you right-click a component in the 3D world.
+
+### Example: running a statistics export add-on
+
+This illustrates a typical add-on usage pattern:
+
+<Steps>
+  <Step title="Run your simulation">
+    Build and run your simulation as normal. The add-on collects data in the background while the simulation runs.
+  </Step>
+  <Step title="Open the add-on command">
+    After stopping the simulation, go to **Add-Ons** tab → **Statistics Export** (the name depends on the specific add-on).
+  </Step>
+  <Step title="Configure and export">
+    The add-on opens a dialog where you select output format, time range, and components. Click **Export** to generate the report file.
+  </Step>
+</Steps>
+
+## Building your own add-on
+
+To distribute your own Python scripts as a reusable add-on, package them as a `.vcax` file. The simplest structure is:
+
+```
+my_addon/
+  __init__.py        # registers commands and panels
+  commands.py        # command implementations
+  utils.py           # shared utilities
+```
+
+The `__init__.py` registers the add-on's entry points:
+
+```python
+# my_addon/__init__.py
+from vcScript import getApplication
+
+def initialize():
+    app = getApplication()
+    app.addCommand('MyAddon.RunAnalysis', run_analysis, 'Run Analysis')
+
+def run_analysis():
+    app = getApplication()
+    print('Running analysis...')
+    # your logic here
+```
+
+Package the folder as a `.vcax` file by zipping the contents and renaming the extension. See [Creating add-ons](/python-api/creating-add-ons) for the full walkthrough.

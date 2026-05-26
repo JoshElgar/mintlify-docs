@@ -1,0 +1,237 @@
+---
+title: "Teach Robot Positions and Paths Interactively"
+description: "Use the teaching panel in Visual Components 5.0 to jog robots by joint or TCP, teach motion points, define tool and base frames, and build If statement logic."
+---
+
+Robot teaching in Visual Components 5.0 is an interactive process where you physically move the robot to a desired position in the 3D world and then capture that position as a motion point in the program. This mirrors the way real robots are programmed on the shop floor: you bring the robot to each target, confirm it, and the controller records the coordinates. Visual Components adds speed and safety to this workflow because you can iterate freely without risk to equipment or personnel.
+
+## Before you start
+
+Make sure you have:
+
+- A robot added to the layout from the eCatalog
+- A tool mounted on the robot flange (optional but recommended for most applications)
+- The **Robot Controller** panel open (click the robot to open it)
+
+## The program tab structure
+
+The **Program** tab in the robot controller panel is organized into routines. Every robot starts with a **Main** routine. You can add additional routines (subprograms) and call them from Main. Within each routine, statements appear in execution order — top to bottom.
+
+The main statement types you will work with during teaching are:
+
+| Statement | Purpose |
+|---|---|
+| **Path** | Defines one or more motion points the robot moves through |
+| **Define Tool** | Sets the active tool frame at a point in the program |
+| **Define Base** | Sets the active base frame at a point in the program |
+| **If / ElseIf / Else** | Conditional branching based on a variable or signal value |
+| **Delay** | Pauses execution for a specified time |
+| **Set Signal** | Sets an output signal value |
+| **Wait Signal** | Waits until an input signal reaches a target value |
+
+## Jogging the robot
+
+Before you can teach a position, you need to move the robot to that position. Visual Components provides two jog modes.
+
+<Tabs>
+  <Tab title="TCP (Cartesian) jog">
+    In TCP jog mode, you move the robot's Tool Center Point in the world coordinate system. Drag the translation arrows (X, Y, Z) or rotation arcs (Rx, Ry, Rz) that appear at the TCP. This keeps the tool orientation constant while moving in a straight line and is the easiest way to approach a target from a known direction.
+
+    To enter TCP jog, select the robot and click **Jog** in the controller panel. The handles appear at the TCP by default.
+  </Tab>
+  <Tab title="Joint jog">
+    In joint jog mode, you move each axis independently. Switch to the **Joints** tab in the controller panel and drag the slider for any joint, or type a value directly. Joint jog is useful for moving out of a singularity or adjusting the robot's posture without changing the TCP position.
+
+    Hold **Ctrl** while dragging a joint slider to move it in finer increments.
+  </Tab>
+</Tabs>
+
+<Tip>
+You can also jog the robot by clicking a position on a workpiece surface. With the robot selected, hold **Alt** and click any surface point in the 3D world. The robot TCP moves to that point along the surface normal.
+</Tip>
+
+## Teaching a Path statement
+
+A Path statement is the primary way to define robot motion. It contains one or more motion points, each storing the TCP target position and approach type (joint or linear).
+
+<Steps>
+  <Step title="Add a Path statement">
+    In the **Program** tab, right-click in the routine tree where you want to add the motion and select **Add Statement > Path**. An empty Path statement appears.
+  </Step>
+  <Step title="Jog the robot to the first position">
+    Use TCP or joint jog to move the robot to the first target position. Confirm that the tool orientation and approach angle are correct.
+  </Step>
+  <Step title="Teach the point">
+    Click **Teach** in the teaching overlay (the toolbar that appears at the top of the 3D view when a Path is selected). The current robot position is captured as a motion point inside the Path statement.
+
+    Alternatively, right-click the Path statement and select **Teach Point**.
+  </Step>
+  <Step title="Set the motion type">
+    Click the motion point in the program tree to open its properties. Set the **Motion Type** to:
+    - **Joint** (point-to-point) for approach and retract moves where the path does not matter
+    - **Linear** for process moves where the TCP must travel in a straight line
+    - **Circular** for arc moves between three defined points
+  </Step>
+  <Step title="Repeat for each position">
+    Jog the robot to each subsequent position and click **Teach** to add more points to the Path. Points are added in sequence below the currently selected point.
+  </Step>
+</Steps>
+
+<Note>
+When you click a motion point in the program tree, the robot animates to that position in the 3D world so you can verify it visually without running the full simulation.
+</Note>
+
+### Teaching from edges and curves
+
+For process applications like welding or sealing, you can teach a path by selecting edges directly on a CAD workpiece. This avoids having to jog to every point individually.
+
+<Steps>
+  <Step title="Select the Path statement">
+    Click the Path statement in the program tree to activate the edge-selection mode.
+  </Step>
+  <Step title="Click edges on the workpiece">
+    Click an edge or curve on the CAD geometry in the 3D world. Visual Components generates motion points along the entire edge at the tool approach angle.
+
+    Hold **Shift** to add multiple edges to the same path. Press **Backspace** to remove the last selected edge.
+  </Step>
+  <Step title="Set curve offset and density">
+    In the Path properties panel, set the **Curve Offset** to lift the TCP slightly above the surface (useful for sealing or coating applications). Adjust the **Point Density** to control how many points are generated along the curve.
+  </Step>
+  <Step title="Reverse the path if needed">
+    Right-click the Path statement and select **Reverse Path** to flip the direction of travel along the curve.
+  </Step>
+</Steps>
+
+## Teaching a Define Tool statement
+
+A **Define Tool** statement changes which tool frame is active at a specific point in the program. This is essential when the robot picks up a part and needs to treat the part's grasp point as the new TCP.
+
+<Steps>
+  <Step title="Add a Define Tool statement">
+    Right-click in the routine tree and select **Add Statement > Define Tool**. Place it before the motion statements that use the new tool frame.
+  </Step>
+  <Step title="Select the tool frame">
+    In the statement properties, choose the target tool frame from the **Tool** dropdown. The robot controller updates the active TCP to that frame.
+  </Step>
+  <Step title="Attach the frame to a node (optional)">
+    To have the tool frame move with a component (for example, following a part the robot is carrying), click **Attach to Node** and select the part's root node. The frame inherits the component's transformation.
+  </Step>
+</Steps>
+
+<Tip>
+You can show all tool frames in the 3D world simultaneously by right-clicking any robot joint and selecting **Show Tool Frames**. This makes it easier to verify that each frame is pointing in the correct direction.
+</Tip>
+
+## Teaching a Define Base statement
+
+A **Define Base** statement changes the active base frame — the coordinate system that all subsequent motion points are measured in. Base frames are used in palletizing, stacking, and any application where you want to express positions relative to a fixture rather than the world origin.
+
+<Steps>
+  <Step title="Add a Define Base statement">
+    Right-click in the routine tree and select **Add Statement > Define Base**.
+  </Step>
+  <Step title="Configure the base frame">
+    In the statement properties, choose the base frame from the **Base** dropdown. You can:
+    - Set the base to an **absolute position** in the world coordinate system
+    - **Attach it to a component node** so the base moves with the component (useful for parts on a conveyor or positioner)
+    - Move the base frame **relative to its current location** to create stacking offsets
+  </Step>
+  <Step title="Teach positions using the new base">
+    After the Define Base statement, all taught positions are stored relative to the new base frame. If the base frame moves during simulation (because it is attached to a moving component), the robot follows the new positions automatically.
+  </Step>
+</Steps>
+
+<Note>
+Base frames are the key mechanism for palletizing programs. You define a base at pallet position 1, teach the pick-and-place motion, then increment the base frame for each subsequent layer or column using a **Define Base** statement with a relative offset.
+</Note>
+
+## Teaching an If statement
+
+An **If** statement adds conditional branching to the robot program. The robot evaluates a condition and executes one block of statements if the condition is true and a different block if it is false.
+
+<Steps>
+  <Step title="Add an If statement">
+    Right-click in the routine tree and select **Add Statement > If**. The statement is inserted with an empty **Then** scope and an **Else** scope.
+  </Step>
+  <Step title="Define the condition">
+    Click the **If** statement and edit the condition expression. You can reference:
+    - **Signal values** (for example, `InputSignal1 == 1`)
+    - **Robot variables** (for example, `partCount > 5`)
+    - **Component properties** from any component in the simulation
+    - Multiple conditions combined with `and` / `or`
+  </Step>
+  <Step title="Add statements to each branch">
+    Right-click the **Then** scope to add statements that execute when the condition is true. Right-click the **Else** scope for statements that execute when it is false. You can nest If statements or leave either branch empty.
+  </Step>
+  <Step title="Add ElseIf branches (optional)">
+    Right-click the If statement and select **Add ElseIf** to insert additional conditions between the Then and Else branches. This lets you create multi-way branching logic without nesting multiple If statements.
+  </Step>
+</Steps>
+
+### Common use case: picking parts conditionally
+
+A typical pattern is to check whether a sensor signal indicates a part is present before the robot attempts to pick it.
+
+```
+If InputSignal_PartPresent == 1 Then
+    Path: ApproachPick
+    Path: Pick
+    Set Signal GripperClose = 1
+    Path: Retract
+Else
+    Delay 0.5
+End If
+```
+
+<Tip>
+You can reference any component property in a condition expression, not just signals. For example, check `Conveyor.Speed > 0` to verify a conveyor is running before the robot starts its cycle.
+</Tip>
+
+## Teaching a Delay statement
+
+A **Delay** statement pauses program execution for a fixed time. This is useful for waiting for a gripper to close, a conveyor to start, or any timed process to complete.
+
+<Steps>
+  <Step title="Add a Delay statement">
+    Right-click in the routine tree and select **Add Statement > Delay**.
+  </Step>
+  <Step title="Set the delay time">
+    In the properties panel, enter the delay time in seconds. For example, enter `0.5` to pause for half a second.
+  </Step>
+</Steps>
+
+## Fast teaching overlay
+
+When you select a Path statement or are in Jog mode, a teaching overlay appears at the top of the 3D view with three quick-action buttons:
+
+| Button | Action |
+|---|---|
+| **Teach** | Captures the current robot position as a motion point |
+| **Trace** | Enables motion tracing — the robot draws its TCP path as a colored line during simulation |
+| **Grasp** | Triggers a grasp action at the current position, attaching any component in the tool volume to the robot |
+
+Use **Trace** after teaching a set of positions to visually verify the robot path matches your intent before running the full simulation.
+
+## Touch-up and modifying existing points
+
+After teaching, you can adjust any motion point without reteaching the whole path.
+
+<Steps>
+  <Step title="Click the point in the program tree">
+    The robot animates to the stored position.
+  </Step>
+  <Step title="Jog the robot to the corrected position">
+    Make the adjustment using TCP or joint jog.
+  </Step>
+  <Step title="Right-click and select Touch-up">
+    The point updates to the new robot position while keeping all other properties (motion type, speed, external axis values) unchanged.
+  </Step>
+</Steps>
+
+## Next steps
+
+Once you have taught the core motion points, move on to building a complete program with signals, variables, and subprograms.
+
+- [Write and manage robot programs](/guides/robot-simulation/robot-programming) — add Set Signal, Wait Signal, variables, and subprograms
+- [Configure I/O signals](/guides/robot-simulation/signals) — connect gripper and sensor signals to the robot program
+- [Check reachability](/guides/robot-simulation/reachability) — verify all taught positions are within the robot's workspace

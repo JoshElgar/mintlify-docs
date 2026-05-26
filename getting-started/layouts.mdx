@@ -1,0 +1,91 @@
+---
+title: "Create and Manage Layouts in Visual Components"
+description: "Understand what layouts are in Visual Components, how to create and save them as .vcmx files, and how sub-layouts help manage large simulation projects."
+---
+
+A layout is the core working document in Visual Components. It is a saved 3D scene that contains all the components in your simulation — robots, conveyors, machines, products, and any custom geometry — along with their positions, configurations, connections, and robot programs. You save a layout as a `.vcmx` file and open it again to continue working or to run the simulation. Everything in your simulation, including how it behaves, is stored in this single file.
+
+## Creating a new layout
+
+When you launch Visual Components, it opens a blank layout automatically. To create a new blank layout at any time:
+
+- Press **Ctrl + N**, or
+- Go to **Home → New** in the ribbon toolbar.
+
+If you have unsaved changes, the application prompts you to save before clearing the current layout.
+
+## Adding components to a layout
+
+You add components to a layout by dragging them from the eCatalog panel into the 3D world:
+
+<Steps>
+  <Step title="Find a component in the eCatalog">
+    Use the search box at the top of the eCatalog panel to search by name or keyword (for example, "IRB 6700" or "roller conveyor"). You can also browse by category using the tree on the left side of the panel.
+  </Step>
+  <Step title="Drag the component into the 3D world">
+    Click and drag the component thumbnail from the eCatalog into the 3D world. The component appears at the cursor position on the floor plane.
+  </Step>
+  <Step title="Position the component">
+    With the component selected, use the move gizmo (arrows for X, Y, Z translation) to drag it to the correct position. You can also type exact coordinates in the properties panel on the right.
+  </Step>
+  <Step title="Configure component properties">
+    With the component selected, its configurable parameters appear in the properties panel. Adjust settings such as conveyor speed, robot payload, or machine cycle time as needed.
+  </Step>
+</Steps>
+
+<Tip>
+  Hold **Ctrl** while dragging a component in the 3D world to snap it to the grid. Use the snap tool in the ribbon to configure snap increment and type.
+</Tip>
+
+## Positioning and orienting components
+
+After placing a component, you can precisely control its position and orientation:
+
+- **Move gizmo** — three colored arrows (red = X, green = Y, blue = Z) for translating the component along each axis.
+- **Rotate gizmo** — three colored arcs for rotating around each axis. Activate it by pressing **R** or selecting the rotate tool in the toolbar.
+- **Properties panel** — enter exact numeric values for X, Y, Z position and rotation angles for precise placement.
+- **Snap tool** — snap components to surfaces, connection ports, or a fixed grid to align them automatically.
+
+## Saving a layout
+
+Save your layout frequently to avoid losing work.
+
+| Action | Shortcut | Behavior |
+|---|---|---|
+| **Save** | **Ctrl + S** | Saves to the current file location. Prompts for a location on first save. |
+| **Save As** | **Ctrl + Shift + S** | Saves to a new file location, leaving the original unchanged. |
+
+### Save options
+
+When you save a layout, Visual Components presents two important options:
+
+**Include Components** — when enabled, component definitions are embedded directly in the `.vcmx` file. This makes the layout self-contained and portable: anyone who opens the file gets all the components without needing access to your eCatalog sources. Disable this option to keep the layout file smaller, with the trade-off that the components must be available via eCatalog or a shared folder on any machine that opens the file.
+
+**Include Component Original Path** — stores the original file path of each component alongside the embedded definition. When you open the layout later, Visual Components can check whether a newer version of the component exists at the original path and prompt you to update.
+
+<Note>
+  For sharing layouts with colleagues or submitting them to support, always enable **Include Components** to ensure the file is self-contained.
+</Note>
+
+## Opening a layout
+
+To open an existing layout:
+
+- Press **Ctrl + O**, or go to **Home → Open**, then browse to the `.vcmx` file.
+- Double-click a `.vcmx` file in Windows Explorer to open it directly in Visual Components.
+
+You can also pin recent layouts from the **Home → Recent** menu for quick access.
+
+## Sub-layouts for large simulations
+
+When a simulation grows large — for example, a full factory with hundreds of components — managing everything in a single layout file can become unwieldy. Visual Components supports **sub-layouts**, which let you split a large simulation into modular sections that load together.
+
+A sub-layout is a standard `.vcmx` file that you reference from a parent layout. When the parent layout opens, it loads the sub-layouts and merges them into a single 3D scene. Changes made to a sub-layout file are reflected in every parent layout that references it.
+
+Sub-layouts are useful for:
+
+- Team collaboration where different engineers work on separate sections.
+- Reusing a standard robot cell or workstation across multiple layouts.
+- Breaking a large factory into logical zones (assembly, painting, packaging) for easier navigation and performance.
+
+To add a sub-layout: go to **Home → Sub-layouts → Add Sub-layout** and browse to the `.vcmx` file you want to include.

@@ -1,0 +1,93 @@
+---
+title: "Browse and Use the eCatalog Component Library"
+description: "Learn how to search and browse the Visual Components eCatalog, add components to your layout, create smart collections, and add local folders as custom sources."
+---
+
+The eCatalog panel is the primary library from which you build your simulation layouts. It contains thousands of pre-built, simulation-ready components — including robots from the major manufacturers, conveyors, machines, feeders, and general manufacturing equipment — organized into searchable categories. You can also extend the eCatalog with your own custom components and local folders, making it a centralized hub for all simulation assets.
+
+## Opening the eCatalog panel
+
+The eCatalog panel is open by default on the left side of the Visual Components interface. If you have closed it, reopen it from **Home → Panels → eCatalog**.
+
+## Searching for components
+
+The search box at the top of the eCatalog panel searches across all available sources simultaneously. Type a component name, manufacturer, or keyword and press **Enter**. Results appear as thumbnail cards showing the component name and a preview image.
+
+**Search tips:**
+
+- Search by robot model number (for example, `KR 16` or `IRB 4600`) to find specific robot variants.
+- Search by category keyword (for example, `roller conveyor`, `feeder`, `gripper`) to browse by function.
+- Use the **Filters** dropdown to narrow results by source, category, or tag.
+
+## Browsing by category
+
+Click the **Categories** tab in the eCatalog to browse components organized into a folder tree. The main top-level categories in the default eCatalog are:
+
+| Category | Contents |
+|---|---|
+| **Robots** | Articulated robots, SCARA robots, delta robots, and collaborative robots from major brands |
+| **Conveyors** | Belt, roller, and chain conveyors, turntables, lifts, and diverters |
+| **PM Resources** | Process Modeling resources: machines, assembly stations, and process operations |
+| **Feeders and Sinks** | Product sources, feeders, and product sinks for material flow |
+| **Products** | Generic and industry-specific product geometry (boxes, pallets, bottles, etc.) |
+| **Tools** | Robot end-of-arm tools: grippers, welding guns, dispensers, and suction cups |
+| **Humans** | Human operator models for ergonomic and safety analysis |
+| **Infrastructure** | Walls, floors, safety fencing, cable trays, and structural elements |
+
+## Adding components to your layout
+
+Drag a component thumbnail from the eCatalog panel into the 3D world to place it in your layout. The component drops onto the floor plane at the cursor position. Once placed, you can position and configure it using the move gizmo and properties panel.
+
+You can also double-click a component in the eCatalog to place it at the world origin (0, 0, 0).
+
+## Adding a local folder as a source
+
+If you have custom components stored on your computer or a network drive, you can add that folder as a source in the eCatalog. This makes your custom components appear alongside the built-in catalog content.
+
+<Steps>
+  <Step title="Open eCatalog settings">
+    Click the **Settings** icon (gear) at the top-right corner of the eCatalog panel, then choose **Add Source**.
+  </Step>
+  <Step title="Browse to the folder">
+    In the dialog that opens, browse to the folder containing your `.vcmx` component files and click **Select Folder**.
+  </Step>
+  <Step title="Confirm the source appears">
+    The folder appears as a new source in the eCatalog tree. Click it to browse its contents. Visual Components scans the folder and displays all valid component files as thumbnails.
+  </Step>
+</Steps>
+
+<Tip>
+  For team projects, add a shared network drive as a source so all team members have access to the same library of custom components.
+</Tip>
+
+## Smart collections
+
+A smart collection is a saved search query that automatically groups components matching specific criteria. Unlike a static folder, a smart collection updates dynamically as new components are added to the catalog.
+
+To create a smart collection:
+
+<Steps>
+  <Step title="Open collection settings">
+    Click the **+** icon next to **Collections** in the eCatalog panel sidebar.
+  </Step>
+  <Step title="Define the filter criteria">
+    Set one or more filter conditions — for example, `Category = Robots` and `Manufacturer = KUKA`. You can combine multiple conditions with AND/OR logic.
+  </Step>
+  <Step title="Name and save the collection">
+    Give the collection a name (for example, "KUKA robots") and click **Save**. The collection appears in the sidebar and automatically shows all matching components from all sources.
+  </Step>
+</Steps>
+
+## Adding collection groups
+
+Collection groups let you organize multiple collections into a named folder, which is useful when you manage large libraries with many custom collections.
+
+To add a collection group: click the **Settings** icon in the eCatalog panel, choose **Add Collection Group**, enter a name, and click **OK**. Drag existing collections into the group by dropping them onto the group folder in the sidebar.
+
+## Refreshing the eCatalog
+
+If you add, remove, or modify component files in a local folder source, click **Refresh** (the circular arrow icon) in the eCatalog panel to rescan all sources and update the displayed content. Online catalog content updates automatically when you connect to the Visual Components catalog servers.
+
+<Note>
+  Accessing the online eCatalog content requires an active internet connection and a valid Visual Components license. If you work offline, only local folder sources and previously cached catalog content are available.
+</Note>

@@ -1,0 +1,173 @@
+---
+title: "Create and Import 3D Geometry for Components"
+description: "Build component geometry with Box, Cylinder, and Sphere primitives, import STEP or JT CAD files, and apply Boolean operations in Visual Components."
+---
+
+Every component in Visual Components needs a visual shape before you can define joints, add behaviors, or test it in simulation. You can build that shape from scratch using parametric primitives, import existing CAD data, or combine both approaches. This page covers all the geometry tools available in Visual Components 5.0 and explains when to use each one.
+
+## Primitive geometry features
+
+Primitives are the fastest way to create parametric geometry that scales cleanly. Select a node in the Component Graph, then go to **Modeling > Add Geometry** and choose a shape.
+
+<Tabs>
+  <Tab title="Box">
+    A rectangular solid defined by `SizeX`, `SizeY`, and `SizeZ` properties. Use it for machine housings, frames, pallets, and any flat-sided structure. Boxes also work well as placeholder geometry for rapid prototyping.
+
+    **Key properties:**
+    - `SizeX / SizeY / SizeZ` — dimensions in millimeters
+    - `Material` — visual material applied to all faces
+    - `Visible` — toggle visibility at runtime
+  </Tab>
+  <Tab title="Cylinder">
+    A solid cylinder defined by `Radius`, `Height`, and `Slices` (polygon count). Use it for rollers, shafts, pipes, and rounded posts. Increase `Slices` to 32 or 64 for smooth rendering.
+
+    **Key properties:**
+    - `Radius` — radius in mm
+    - `Height` — length along the local Z axis
+    - `Slices` — number of sides (default 16)
+  </Tab>
+  <Tab title="Sphere">
+    A sphere defined by `Radius`, `Slices`, and `Stacks`. Useful for balls, sensor indicators, and rounded end-caps.
+  </Tab>
+  <Tab title="Cone">
+    A cone or truncated cone defined by `BottomRadius`, `TopRadius`, and `Height`. Set `TopRadius = 0` for a sharp tip; set a non-zero value for a frustum.
+  </Tab>
+</Tabs>
+
+<Note>
+  Primitives are **parametric**: changing a property value like `SizeX` updates the geometry instantly, even during simulation. This is the main advantage over imported CAD—you can expose these properties so users can resize the component without re-modeling.
+</Note>
+
+## Importing CAD files
+
+Visual Components supports importing geometry from STEP (.stp / .step), JT (.jt), OBJ (.obj), STL (.stl), and several other formats depending on your license.
+
+<Steps>
+  <Step title="Import a file">
+    Go to **File > Import** (or drag the file into the 3D world). Visual Components imports the file and places it as a new component in the layout.
+  </Step>
+  <Step title="Move geometry into your component">
+    If you're building a component, open your component for editing, then use **Edit > Cut** on the imported geometry node and **Edit > Paste** inside your component's node tree. Alternatively, use the **Import and Combine** workflow to import directly into an open component.
+  </Step>
+  <Step title="Clean up the node structure">
+    Imported STEP files often arrive as a flat list of geometry pieces. Use the Component Graph to reorganize them: group static parts under the root node, and separate moving parts into child nodes that will receive joints.
+  </Step>
+</Steps>
+
+## Geometry feature tools
+
+After importing CAD, you often need to manipulate the geometry to make it parametric or simulation-ready. Open the feature tool panel by right-clicking a geometry node and choosing **Add Feature Tool**.
+
+<Accordion title="Select Identical">
+  Selects all geometry faces or edges that match a selected face—useful for quickly selecting all holes of the same diameter or all flat faces at the same height before applying another operation.
+</Accordion>
+
+<Accordion title="Merge">
+  Combines multiple separate geometry bodies in the same node into a single mesh. Use this to reduce draw calls and simplify the component graph when separate bodies don't need to move independently.
+</Accordion>
+
+<Accordion title="Split">
+  Divides a single geometry body into separate parts along face boundaries. This is how you separate a single imported STEP mesh into a moving part and a static frame—select the faces that belong to the moving part, apply Split, and the result is two separate geometry bodies you can assign to different nodes.
+</Accordion>
+
+<Accordion title="Remove Holes">
+  Fills holes in a mesh surface. Useful for cleaning up imported CAD with many small bolt holes that you don't need in simulation and that slow down rendering.
+</Accordion>
+
+<Accordion title="Slice">
+  Cuts a geometry body into parametric sections, preserving the ability to change overall dimensions without distorting features. This is critical for conveyors and structural profiles: slice off the end caps, then the middle section can scale to match a `Length` property without stretching the end-cap details.
+
+  **Example use:** A conveyor leg imported as a single mesh would distort if you simply scale the component. After slicing the leg into top, body, and foot sections, only the body section stretches when you change the leg height.
+</Accordion>
+
+<Accordion title="Collapse">
+  Flattens a node's transform into its geometry, resetting the node's local origin to the world origin. Use this after repositioning geometry to clean up coordinate offsets.
+</Accordion>
+
+<Accordion title="Merge Faces">
+  Combines coplanar adjacent faces into a single polygon. Reduces polygon count on flat surfaces of imported geometry, which improves rendering performance.
+</Accordion>
+
+<Accordion title="Invert">
+  Flips the face normals of a geometry body. Use this when imported geometry appears inside-out (dark / invisible from certain angles) due to incorrect normal orientation.
+</Accordion>
+
+## Boolean operations
+
+The **Boolean** feature lets you combine two geometry bodies using set operations. Select the target node, add a Boolean feature, and choose the operation and the tool body.
+
+<Tabs>
+  <Tab title="Union">
+    Joins two bodies into one, removing any overlap. Use it to merge two primitives into a single combined shape.
+  </Tab>
+  <Tab title="Subtract">
+    Removes the volume of the tool body from the target body. The classic example is drilling a hole: create a Cylinder at the hole position, then subtract it from the surrounding Box.
+
+    ```
+    Base body: Box (100 × 100 × 50 mm)
+    Tool body: Cylinder (Radius=10, Height=60 mm), positioned at center
+    Result: Box with a 20 mm-diameter through-hole
+    ```
+  </Tab>
+  <Tab title="Intersect">
+    Keeps only the volume shared by both bodies, discarding everything else. Useful for creating fillets or cross-sections.
+  </Tab>
+</Tabs>
+
+<Note>
+  The **component hierarchy** matters for Boolean operations. The tool body must exist on the same node or a child node. After applying a Boolean, the tool body is consumed and disappears from the Component Graph.
+</Note>
+
+## Texture mapping
+
+You can apply image textures to any geometry surface using the **Mapping** tool.
+
+<Steps>
+  <Step title="Assign a material with a texture">
+    In the **Materials** panel, create or duplicate a material, then assign a texture image file to its diffuse channel.
+  </Step>
+  <Step title="Open the Mapping tool">
+    Select the geometry node and go to **Modeling > Mapping**. The UV mapping gizmo appears in the 3D view.
+  </Step>
+  <Step title="Adjust the mapping">
+    Choose the projection type (planar, cylindrical, box) and adjust scale, offset, and rotation until the texture aligns correctly on the surface.
+  </Step>
+</Steps>
+
+<Tip>
+  For company logos or labels, use the **Decal** feature instead of a full texture. A decal is a flat image projected onto a surface with correct depth sorting, ideal for small graphics that sit on top of a larger surface.
+</Tip>
+
+## Making imported CAD parametric
+
+One of the most practical uses of geometry feature tools is transforming a rigid imported CAD model into a parametric component whose size you can change without distortion.
+
+<Steps>
+  <Step title="Identify the scalable axis">
+    Decide which dimension should be parameterizable (e.g., the length of a conveyor or the height of a frame column).
+  </Step>
+  <Step title="Apply Slice to the relevant geometry">
+    Use the Slice tool to cut the geometry perpendicular to the scalable axis, separating it into start, middle, and end sections.
+  </Step>
+  <Step title="Create a property">
+    Add a custom **Real** property to the component root (e.g., `Length`). In the Component Graph, select the middle section and write an expression that maps the `Length` property to the geometry's scale along the scalable axis.
+  </Step>
+  <Step title="Reposition end sections">
+    Use expressions to move the end-cap sections so they stay flush with the ends of the scaled middle section regardless of the `Length` value.
+  </Step>
+</Steps>
+
+<Warning>
+  Avoid using non-uniform node scaling (modifying `Scale` on a node) as a substitute for proper parametric modeling. Non-uniform scaling distorts features like holes, fillets, and text that should remain fixed-size.
+</Warning>
+
+## Working with node structure
+
+Every geometry feature in the Component Graph belongs to a node. Understanding this relationship helps you predict how geometry behaves when joints move:
+
+- Geometry on the **root node** is always static relative to the component's world position
+- Geometry on a **child node** moves with that node when its joint is actuated
+- Multiple geometry features on the same node all move as a single rigid body
+- A node can have **zero** geometry—this is normal for pure kinematic nodes (frames)
+
+Use the **Selection – Nodes** workflow to click directly on geometry in the 3D view and see which node it belongs to: hold `Shift` while clicking in the 3D view to cycle through overlapping nodes.
